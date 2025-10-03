@@ -553,11 +553,12 @@ function StockCounter() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6" data-testid="main-tabs">
+          <TabsList className="grid w-full grid-cols-5 mb-6" data-testid="main-tabs">
             <TabsTrigger value="count" data-testid="count-tab" className="text-sm">Count</TabsTrigger>
             <TabsTrigger value="shopping" data-testid="shopping-tab" className="text-sm">Shopping</TabsTrigger>
             <TabsTrigger value="quick" data-testid="quick-tab" className="text-sm">Alerts</TabsTrigger>
             <TabsTrigger value="manage" data-testid="manage-tab" className="text-sm">Manage</TabsTrigger>
+            <TabsTrigger value="history" data-testid="history-tab" className="text-sm">History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="count" className="space-y-4" data-testid="count-content">
