@@ -1,94 +1,196 @@
 {
   "summary": {
-    "total_tests": 14,
-    "passed_tests": 14,
-    "success_rate": "100.0%",
-    "timestamp": "2025-10-03T18:12:31.035315"
+    "total_tests": 31,
+    "passed_tests": 27,
+    "success_rate": "87.1%",
+    "timestamp": "2025-10-03T20:48:43.876148"
   },
   "test_results": [
     {
-      "test_name": "Initialize Sample Data",
+      "test_name": "Initialize Enhanced Real Data",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"message\": \"Sample data initialized successfully\"\n}...",
-      "timestamp": "2025-10-03T18:12:30.783808"
+      "details": "Status: 200, Response: {\n  \"message\": \"Real data initialized successfully\",\n  \"items_count\": 44\n}...",
+      "timestamp": "2025-10-03T20:48:43.366716"
+    },
+    {
+      "test_name": "Real Data Items Count",
+      "success": true,
+      "details": "Initialized 44 items",
+      "timestamp": "2025-10-03T20:48:43.367336"
     },
     {
       "test_name": "Get All Items",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"57eaf8d3-8081-4f1b-82fd-92ecd6b0140e\",\n    \"name\": \"Big Chang\",\n    \"category\": \"B\",\n    \"category_name\": \"Beer\",\n    \"units_per_case\": 12,\n    \"min_stock\": 50,\n    \"max_stock\": 200,\n...",
-      "timestamp": "2025-10-03T18:12:30.824821"
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"9acfa853-f5ad-4d96-b26f-5157df1b90e0\",\n    \"name\": \"Big Chang\",\n    \"category\": \"B\",\n    \"category_name\": \"Beer\",\n    \"units_per_case\": 15,\n    \"min_stock\": 30,\n    \"max_stock\": 120,\n...",
+      "timestamp": "2025-10-03T20:48:43.402720"
     },
     {
       "test_name": "Items Response Format",
       "success": true,
-      "details": "Found 10 items",
-      "timestamp": "2025-10-03T18:12:30.825543"
+      "details": "Found 44 items",
+      "timestamp": "2025-10-03T20:48:43.403515"
     },
     {
       "test_name": "Create Stock Count",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"51cf63d6-5ba5-43e7-aa64-c8e37e2376fe\",\n  \"item_id\": \"57eaf8d3-8081-4f1b-82fd-92ecd6b0140e\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
-      "timestamp": "2025-10-03T18:12:30.868707"
+      "details": "Status: 200, Response: {\n  \"id\": \"6ded117c-50cd-47f4-a604-e25d133b6013\",\n  \"item_id\": \"9acfa853-f5ad-4d96-b26f-5157df1b90e0\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.441699"
     },
     {
       "test_name": "Stock Count Total Calculation",
       "success": true,
       "details": "Total: 50",
-      "timestamp": "2025-10-03T18:12:30.869349"
+      "timestamp": "2025-10-03T20:48:43.442348"
     },
     {
       "test_name": "Update Stock Count",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"51cf63d6-5ba5-43e7-aa64-c8e37e2376fe\",\n  \"item_id\": \"57eaf8d3-8081-4f1b-82fd-92ecd6b0140e\",\n  \"main_bar\": 25,\n  \"beer_bar\": 30,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 80,\n  \"c...",
-      "timestamp": "2025-10-03T18:12:30.911479"
+      "details": "Status: 200, Response: {\n  \"id\": \"6ded117c-50cd-47f4-a604-e25d133b6013\",\n  \"item_id\": \"9acfa853-f5ad-4d96-b26f-5157df1b90e0\",\n  \"main_bar\": 25,\n  \"beer_bar\": 30,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 80,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.479423"
     },
     {
       "test_name": "Stock Count Update Values",
       "success": true,
       "details": "Values updated correctly",
-      "timestamp": "2025-10-03T18:12:30.912128"
+      "timestamp": "2025-10-03T20:48:43.480049"
+    },
+    {
+      "test_name": "Create Stock Count",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"4b57854c-3688-4688-a640-5a0136e5c272\",\n  \"item_id\": \"05eb36e1-d397-4495-a01a-16ea8882cad2\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.514939"
+    },
+    {
+      "test_name": "Stock Count Total Calculation",
+      "success": true,
+      "details": "Total: 50",
+      "timestamp": "2025-10-03T20:48:43.515584"
+    },
+    {
+      "test_name": "Create Stock Count",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"511aa73e-21c4-41d8-8d92-6e5a8833b991\",\n  \"item_id\": \"4fc8a3a8-9c2b-4f30-8c08-529a686b68ae\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.551486"
+    },
+    {
+      "test_name": "Stock Count Total Calculation",
+      "success": true,
+      "details": "Total: 50",
+      "timestamp": "2025-10-03T20:48:43.552100"
+    },
+    {
+      "test_name": "Create Stock Count",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"d8699cc2-56b7-47e2-a2c7-d68580eca01c\",\n  \"item_id\": \"882d4740-ea02-4311-8c28-4a9e6cc21810\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.585708"
+    },
+    {
+      "test_name": "Stock Count Total Calculation",
+      "success": true,
+      "details": "Total: 50",
+      "timestamp": "2025-10-03T20:48:43.586328"
+    },
+    {
+      "test_name": "Create Stock Count",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"d5cf38f9-88df-4c01-a572-05c64d2332c5\",\n  \"item_id\": \"fdd0c560-3668-44b1-bdff-635824d0e3dd\",\n  \"main_bar\": 10,\n  \"beer_bar\": 15,\n  \"lobby\": 5,\n  \"storage_room\": 20,\n  \"total_count\": 50,\n  \"c...",
+      "timestamp": "2025-10-03T20:48:43.620532"
+    },
+    {
+      "test_name": "Stock Count Total Calculation",
+      "success": true,
+      "details": "Total: 50",
+      "timestamp": "2025-10-03T20:48:43.621164"
     },
     {
       "test_name": "Get All Stock Counts",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"51cf63d6-5ba5-43e7-aa64-c8e37e2376fe\",\n    \"item_id\": \"57eaf8d3-8081-4f1b-82fd-92ecd6b0140e\",\n    \"main_bar\": 25,\n    \"beer_bar\": 30,\n    \"lobby\": 5,\n    \"storage_room\": 20,\n    \"tota...",
-      "timestamp": "2025-10-03T18:12:30.957675"
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"6ded117c-50cd-47f4-a604-e25d133b6013\",\n    \"item_id\": \"9acfa853-f5ad-4d96-b26f-5157df1b90e0\",\n    \"main_bar\": 25,\n    \"beer_bar\": 30,\n    \"lobby\": 5,\n    \"storage_room\": 20,\n    \"tota...",
+      "timestamp": "2025-10-03T20:48:43.657568"
     },
     {
       "test_name": "Get Shopping List",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"Makro\": [\n    {\n      \"item_name\": \"Big Chang\",\n      \"item_id\": \"57eaf8d3-8081-4f1b-82fd-92ecd6b0140e\",\n      \"current_stock\": 80,\n      \"min_stock\": 50,\n      \"max_stock\": 200,\n      \"need_to_b...",
-      "timestamp": "2025-10-03T18:12:30.993969"
+      "details": "Status: 200, Response: {\n  \"Singha99\": [\n    {\n      \"item_name\": \"Big Chang\",\n      \"item_id\": \"9acfa853-f5ad-4d96-b26f-5157df1b90e0\",\n      \"current_stock\": 80,\n      \"min_stock\": 30,\n      \"max_stock\": 120,\n      \"need_t...",
+      "timestamp": "2025-10-03T20:48:43.697581"
     },
     {
       "test_name": "Shopping List Format",
       "success": true,
-      "details": "Found suppliers: ['Makro', 'Singha99', 'Local Market']",
-      "timestamp": "2025-10-03T18:12:30.994583"
-    },
-    {
-      "test_name": "Shopping List Item Structure - Makro",
-      "success": true,
-      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy', 'supplier', 'cost_per_unit', 'estimated_cost']",
-      "timestamp": "2025-10-03T18:12:30.994605"
+      "details": "Found suppliers: ['Singha99', 'Vendor', 'Makro', 'zBKK']",
+      "timestamp": "2025-10-03T20:48:43.698299"
     },
     {
       "test_name": "Shopping List Item Structure - Singha99",
-      "success": true,
-      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy', 'supplier', 'cost_per_unit', 'estimated_cost']",
-      "timestamp": "2025-10-03T18:12:30.994615"
+      "success": false,
+      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy_units', 'case_calculation', 'supplier', 'cost_per_unit', 'cost_per_case', 'estimated_cost']",
+      "timestamp": "2025-10-03T20:48:43.698323"
     },
     {
-      "test_name": "Shopping List Item Structure - Local Market",
-      "success": true,
-      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy', 'supplier', 'cost_per_unit', 'estimated_cost']",
-      "timestamp": "2025-10-03T18:12:30.994624"
+      "test_name": "Shopping List Item Structure - Vendor",
+      "success": false,
+      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy_units', 'case_calculation', 'supplier', 'cost_per_unit', 'cost_per_case', 'estimated_cost']",
+      "timestamp": "2025-10-03T20:48:43.698334"
+    },
+    {
+      "test_name": "Shopping List Item Structure - Makro",
+      "success": false,
+      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy_units', 'case_calculation', 'supplier', 'cost_per_unit', 'cost_per_case', 'estimated_cost']",
+      "timestamp": "2025-10-03T20:48:43.698342"
+    },
+    {
+      "test_name": "Shopping List Item Structure - zBKK",
+      "success": false,
+      "details": "Item fields: ['item_name', 'item_id', 'current_stock', 'min_stock', 'max_stock', 'need_to_buy_units', 'case_calculation', 'supplier', 'cost_per_unit', 'cost_per_case', 'estimated_cost']",
+      "timestamp": "2025-10-03T20:48:43.698350"
     },
     {
       "test_name": "Get Quick Restock",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"item_name\": \"Small Chang\",\n    \"item_id\": \"c7adda81-562a-41a0-a061-32bb591493b7\",\n    \"current_stock\": 0,\n    \"min_stock\": 30,\n    \"category\": \"Beer\",\n    \"primary_supplier\": \"Makro\"\n  },\n ...",
-      "timestamp": "2025-10-03T18:12:31.034261"
+      "details": "Status: 200, Response: [\n  {\n    \"item_name\": \"Small Singha\",\n    \"item_id\": \"e3d6e249-de19-4296-96a0-5a116d87d87b\",\n    \"current_stock\": 0,\n    \"min_stock\": 48,\n    \"category\": \"Beer\",\n    \"primary_supplier\": \"Singha99\"\n  ...",
+      "timestamp": "2025-10-03T20:48:43.739053"
+    },
+    {
+      "test_name": "Create Stock Session - Opening Count Session",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"7c1f7d96-303b-42df-a111-fef35a107698\",\n  \"session_name\": \"Opening Count Session\",\n  \"session_date\": \"2025-10-03T20:48:43.777187Z\",\n  \"is_active\": true,\n  \"session_type\": \"full_count\",\n  \"no...",
+      "timestamp": "2025-10-03T20:48:43.806363"
+    },
+    {
+      "test_name": "Session ID Generated",
+      "success": true,
+      "details": "Session ID: 7c1f7d96-303b-42df-a111-fef35a107698",
+      "timestamp": "2025-10-03T20:48:43.806981"
+    },
+    {
+      "test_name": "Get Stock Sessions",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"7c1f7d96-303b-42df-a111-fef35a107698\",\n    \"session_name\": \"Opening Count Session\",\n    \"session_date\": \"2025-10-03T20:48:43.777000\",\n    \"is_active\": true,\n    \"session_type\": \"full_...",
+      "timestamp": "2025-10-03T20:48:43.842103"
+    },
+    {
+      "test_name": "Stock Sessions Format",
+      "success": true,
+      "details": "Found 1 sessions",
+      "timestamp": "2025-10-03T20:48:43.842737"
+    },
+    {
+      "test_name": "Session Structure",
+      "success": true,
+      "details": "Fields: ['id', 'session_name', 'session_date', 'is_active', 'session_type', 'notes']",
+      "timestamp": "2025-10-03T20:48:43.842765"
+    },
+    {
+      "test_name": "Get Current Session",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"7c1f7d96-303b-42df-a111-fef35a107698\",\n  \"session_name\": \"Opening Count Session\",\n  \"session_date\": \"2025-10-03T20:48:43.777000\",\n  \"is_active\": true,\n  \"session_type\": \"full_count\",\n  \"not...",
+      "timestamp": "2025-10-03T20:48:43.875204"
+    },
+    {
+      "test_name": "Current Session Active",
+      "success": true,
+      "details": "Active session: Opening Count Session",
+      "timestamp": "2025-10-03T20:48:43.875832"
     }
   ]
 }
