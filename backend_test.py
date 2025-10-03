@@ -182,7 +182,7 @@ class BarStockAPITester:
             for supplier, items in response.items():
                 if isinstance(items, list) and len(items) > 0:
                     first_item = items[0]
-                    required_fields = ['item_name', 'current_stock', 'need_to_buy', 'estimated_cost']
+                    required_fields = ['item_name', 'current_stock', 'need_to_buy_units', 'estimated_cost']
                     has_all_fields = all(field in first_item for field in required_fields)
                     self.log_test(f"Shopping List Item Structure - {supplier}", has_all_fields, 
                                 f"Item fields: {list(first_item.keys())}")
