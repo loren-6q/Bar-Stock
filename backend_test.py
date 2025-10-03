@@ -69,14 +69,23 @@ class BarStockAPITester:
             self.log_test(name, False, f"Error: {str(e)}")
             return False, {}
 
-    def test_initialize_sample_data(self):
-        """Initialize sample data"""
-        return self.run_test(
-            "Initialize Sample Data",
+    def test_initialize_real_data(self):
+        """Initialize enhanced real data from spreadsheet"""
+        success, response = self.run_test(
+            "Initialize Enhanced Real Data",
             "POST",
-            "initialize-sample-data",
+            "initialize-real-data",
             200
         )
+        
+        if success:
+            items_count = response.get('items_count', 0)
+            if items_count >= 40:  # Should have 45+ items
+                self.log_test("Real Data Items Count", True, f"Initialized {items_count} items")
+            else:
+                self.log_test("Real Data Items Count", False, f"Expected 40+ items, got {items_count}")
+        
+        return success, response
 
     def test_get_items(self):
         """Test getting all items"""
