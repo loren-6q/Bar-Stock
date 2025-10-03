@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class BarStockAPITester:
-    def __init__(self, base_url="https://mixertracker.preview.emergentagent.com"):
+    def __init__(self, base_url="https://stocktrackr-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
