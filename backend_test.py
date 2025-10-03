@@ -519,6 +519,8 @@ class BarStockAPITester:
         print("\n🗂️  Testing Stock Sessions...")
         session1_success, _ = self.test_create_stock_session("Opening Count Session")
         
+        print(f"Session1 success: {session1_success}, Session ID: {self.test_session_id}")
+        
         if session1_success and self.test_session_id:
             # Save current stock counts to first session
             print("\n💾 Testing Save Stock Counts to Session...")
