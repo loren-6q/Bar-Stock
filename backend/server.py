@@ -597,6 +597,9 @@ async def save_counts_to_session(session_id: str):
     
     # Save each count with session_id reference
     for count in current_counts:
+        # Remove the MongoDB _id to avoid conflicts
+        if '_id' in count:
+            del count['_id']
         count['session_id'] = session_id
         count['saved_date'] = datetime.now(timezone.utc)
         # Create a historical record
