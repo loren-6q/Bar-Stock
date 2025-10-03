@@ -391,10 +391,18 @@ function StockCounter() {
       const response = await axios.post(`${API}/stock-sessions`, sessionData);
       setCurrentSession(response.data);
       
+      // Save current counts to this session
+      await axios.post(`${API}/stock-sessions/${response.data.id}/save-counts`);
+      
       toast({
         title: "Stock count saved!",
         description: `Session "${sessionName}" has been saved to history`,
       });
+      
+      // Refresh sessions list if on history tab
+      if (activeTab === 'history') {
+        loadSessions();
+      }
     } catch (error) {
       console.error('Error saving stock session:', error);
       toast({
@@ -403,6 +411,52 @@ function StockCounter() {
         variant: "destructive",
       });
     }
+  };
+
+  const loadSessions = async () => {
+    try {
+      const response = await axios.get(`${API}/stock-sessions`);
+      setSessions(response.data);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  };
+
+  const generateUsageReport = async () => {
+    if (!selectedSessions.session1 || !selectedSessions.session2) {
+      toast({
+        title: "Select sessions",
+        description: "Please select two sessions to compare",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API}/reports/session-comparison/${selectedSessions.session1}/${selectedSessions.session2}`);
+      setUsageReport(response.data);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error generating report",
+        description: "Could not generate usage report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadSessionPurchases = async (sessionId) => {
+    try {
+      const response = await axios.get(`${API}/purchases/session/${sessionId}`);
+      setPurchases(response.data);
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+    }
+  };
+
+  const confirmPurchases = async (shoppingListData) => {
+    // Open dialog to confirm actual purchases vs planned
+    setPurchaseDialogOpen(true);
   };
 
   const updateStockCount = async (itemId, location, value) => {
