@@ -460,6 +460,150 @@ async def get_current_session():
         return StockSession(**parse_from_mongo(session))
     return None
 
+# Purchase management endpoints
+@api_router.post("/purchases", response_model=PurchaseEntry)
+async def create_purchase_entry(purchase: PurchaseEntryCreate):
+    purchase_obj = PurchaseEntry(**purchase.dict())
+    await db.purchases.insert_one(prepare_for_mongo(purchase_obj.dict()))
+    return purchase_obj
+
+@api_router.get("/purchases/session/{session_id}", response_model=List[PurchaseEntry])
+async def get_session_purchases(session_id: str):
+    purchases = await db.purchases.find({"session_id": session_id}).to_list(1000)
+    return [PurchaseEntry(**parse_from_mongo(purchase)) for purchase in purchases]
+
+@api_router.put("/purchases/{purchase_id}", response_model=PurchaseEntry)
+async def update_purchase_entry(purchase_id: str, purchase_update: PurchaseEntryCreate):
+    update_dict = purchase_update.dict()
+    result = await db.purchases.update_one(
+        {"id": purchase_id}, 
+        {"$set": update_dict}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Purchase entry not found")
+    
+    updated_purchase = await db.purchases.find_one({"id": purchase_id})
+    return PurchaseEntry(**parse_from_mongo(updated_purchase))
+
+@api_router.delete("/purchases/{purchase_id}")
+async def delete_purchase_entry(purchase_id: str):
+    result = await db.purchases.delete_one({"id": purchase_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Purchase entry not found")
+    return {"message": "Purchase entry deleted successfully"}
+
+# Historical analysis and reporting endpoints
+@api_router.get("/reports/session-comparison/{session1_id}/{session2_id}")
+async def compare_sessions(session1_id: str, session2_id: str):
+    # Get both sessions
+    session1 = await db.stock_sessions.find_one({"id": session1_id})
+    session2 = await db.stock_sessions.find_one({"id": session2_id})
+    
+    if not session1 or not session2:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get stock counts for both sessions
+    counts1 = await db.stock_counts.find({"session_id": session1_id}).to_list(1000) if "session_id" in str(await db.stock_counts.find_one()) else []
+    counts2 = await db.stock_counts.find({"session_id": session2_id}).to_list(1000) if "session_id" in str(await db.stock_counts.find_one()) else []
+    
+    # Get purchases between sessions
+    purchases = await db.purchases.find({
+        "session_id": session2_id
+    }).to_list(1000)
+    
+    # Get all items for reference
+    items = await db.items.find().to_list(1000)
+    items_map = {item['id']: item for item in items}
+    
+    # Calculate usage and costs
+    item_comparisons = []
+    total_usage_cost = 0.0
+    
+    counts1_map = {count['item_id']: count for count in counts1}
+    counts2_map = {count['item_id']: count for count in counts2}
+    purchases_map = {purchase['item_id']: purchase for purchase in purchases}
+    
+    for item in items:
+        item_id = item['id']
+        item_name = item['name']
+        
+        # Get counts (default to 0 if not found)
+        opening_stock = counts1_map.get(item_id, {}).get('total_count', 0)
+        closing_stock = counts2_map.get(item_id, {}).get('total_count', 0)
+        
+        # Get purchases (default to 0 if not found)
+        purchases_made = purchases_map.get(item_id, {}).get('actual_quantity', 0)
+        
+        # Calculate usage: opening + purchases - closing
+        calculated_usage = opening_stock + purchases_made - closing_stock
+        
+        # Calculate cost
+        cost_per_unit = item.get('cost_per_unit', 0.0)
+        usage_cost = calculated_usage * cost_per_unit if calculated_usage > 0 else 0.0
+        total_usage_cost += usage_cost
+        
+        if calculated_usage != 0 or purchases_made != 0:  # Only include items with activity
+            item_comparisons.append({
+                "item_id": item_id,
+                "item_name": item_name,
+                "opening_stock": opening_stock,
+                "purchases_made": purchases_made,
+                "closing_stock": closing_stock,
+                "calculated_usage": calculated_usage,
+                "cost_per_unit": cost_per_unit,
+                "usage_cost": usage_cost,
+                "supplier": item.get('primary_supplier', 'Unknown')
+            })
+    
+    # Calculate period between sessions
+    session1_date = datetime.fromisoformat(session1['session_date'].replace('Z', '+00:00')) if isinstance(session1['session_date'], str) else session1['session_date']
+    session2_date = datetime.fromisoformat(session2['session_date'].replace('Z', '+00:00')) if isinstance(session2['session_date'], str) else session2['session_date']
+    period_days = (session2_date - session1_date).days
+    
+    return {
+        "session1_id": session1_id,
+        "session1_name": session1['session_name'],
+        "session1_date": session1_date,
+        "session2_id": session2_id,
+        "session2_name": session2['session_name'],
+        "session2_date": session2_date,
+        "item_comparisons": item_comparisons,
+        "total_usage_cost": total_usage_cost,
+        "period_days": period_days
+    }
+
+@api_router.get("/reports/usage-summary")
+async def get_usage_summary():
+    # Get last two sessions
+    sessions = await db.stock_sessions.find().sort("session_date", -1).limit(2).to_list(2)
+    
+    if len(sessions) < 2:
+        return {"message": "Need at least 2 sessions to generate usage report", "sessions_available": len(sessions)}
+    
+    # Use the comparison endpoint logic
+    latest_session = sessions[0]
+    previous_session = sessions[1]
+    
+    return await compare_sessions(previous_session['id'], latest_session['id'])
+
+# Endpoint to save current stock counts to a session
+@api_router.post("/stock-sessions/{session_id}/save-counts")
+async def save_counts_to_session(session_id: str):
+    # Get current stock counts
+    current_counts = await db.stock_counts.find().to_list(1000)
+    
+    if not current_counts:
+        raise HTTPException(status_code=400, detail="No stock counts available to save")
+    
+    # Save each count with session_id reference
+    for count in current_counts:
+        count['session_id'] = session_id
+        count['saved_date'] = datetime.now(timezone.utc)
+        # Create a historical record
+        await db.historical_counts.insert_one(prepare_for_mongo(count))
+    
+    return {"message": f"Saved {len(current_counts)} stock counts to session", "count": len(current_counts)}
+
 # Initialize with real data from spreadsheet
 @api_router.post("/initialize-real-data")
 async def initialize_real_data():
