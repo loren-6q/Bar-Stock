@@ -198,6 +198,272 @@ class BarStockAPITester:
             200
         )
 
+    # NEW PURCHASE MANAGEMENT TESTS
+    def test_create_stock_session(self, session_name="Test Session"):
+        """Test creating a stock session"""
+        session_data = {
+            "session_name": session_name,
+            "session_type": "full_count",
+            "notes": "Test session for purchase tracking"
+        }
+        
+        success, response = self.run_test(
+            f"Create Stock Session - {session_name}",
+            "POST",
+            "stock-sessions",
+            200,
+            data=session_data
+        )
+        
+        if success:
+            session_id = response.get('id')
+            if session_id:
+                if session_name == "Test Session":
+                    self.test_session_id = session_id
+                else:
+                    self.test_session2_id = session_id
+                self.log_test("Session ID Generated", True, f"Session ID: {session_id}")
+            else:
+                self.log_test("Session ID Generated", False, "No session ID in response")
+        
+        return success, response
+
+    def test_create_purchase_entry(self, session_id, item_id):
+        """Test creating a purchase entry"""
+        purchase_data = {
+            "session_id": session_id,
+            "item_id": item_id,
+            "planned_quantity": 120,  # From shopping list
+            "actual_quantity": 150,   # What was actually bought
+            "cost_per_unit": 44.0,
+            "total_cost": 6600.0,     # 150 * 44
+            "supplier": "Singha99",
+            "notes": "Test purchase - bought more than planned"
+        }
+        
+        success, response = self.run_test(
+            "Create Purchase Entry",
+            "POST",
+            "purchases",
+            200,
+            data=purchase_data
+        )
+        
+        if success:
+            purchase_id = response.get('id')
+            if purchase_id:
+                self.test_purchase_ids.append(purchase_id)
+                self.log_test("Purchase Entry Created", True, f"Purchase ID: {purchase_id}")
+                
+                # Verify calculation
+                expected_total = purchase_data['actual_quantity'] * purchase_data['cost_per_unit']
+                actual_total = response.get('total_cost', 0)
+                if abs(actual_total - expected_total) < 0.01:
+                    self.log_test("Purchase Cost Calculation", True, f"Total: {actual_total}")
+                else:
+                    self.log_test("Purchase Cost Calculation", False, f"Expected {expected_total}, got {actual_total}")
+            else:
+                self.log_test("Purchase Entry Created", False, "No purchase ID in response")
+        
+        return success, response
+
+    def test_get_session_purchases(self, session_id):
+        """Test getting purchases for a session"""
+        success, response = self.run_test(
+            "Get Session Purchases",
+            "GET",
+            f"purchases/session/{session_id}",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            self.log_test("Session Purchases Format", True, f"Found {len(response)} purchases")
+            
+            # Verify purchase structure
+            if len(response) > 0:
+                purchase = response[0]
+                required_fields = ['id', 'session_id', 'item_id', 'planned_quantity', 'actual_quantity', 'total_cost']
+                has_all_fields = all(field in purchase for field in required_fields)
+                self.log_test("Purchase Entry Structure", has_all_fields, f"Fields: {list(purchase.keys())}")
+        else:
+            self.log_test("Session Purchases Format", False, "Response is not a list")
+        
+        return success, response
+
+    def test_update_purchase_entry(self, purchase_id):
+        """Test updating a purchase entry"""
+        update_data = {
+            "session_id": self.test_session_id,
+            "item_id": self.test_item_ids[0] if self.test_item_ids else "test-item",
+            "planned_quantity": 120,
+            "actual_quantity": 140,  # Updated quantity
+            "cost_per_unit": 44.0,
+            "total_cost": 6160.0,    # 140 * 44
+            "supplier": "Singha99",
+            "notes": "Updated purchase quantity"
+        }
+        
+        success, response = self.run_test(
+            "Update Purchase Entry",
+            "PUT",
+            f"purchases/{purchase_id}",
+            200,
+            data=update_data
+        )
+        
+        if success:
+            actual_quantity = response.get('actual_quantity', 0)
+            if actual_quantity == 140:
+                self.log_test("Purchase Update Values", True, "Quantity updated correctly")
+            else:
+                self.log_test("Purchase Update Values", False, f"Expected 140, got {actual_quantity}")
+        
+        return success, response
+
+    def test_delete_purchase_entry(self, purchase_id):
+        """Test deleting a purchase entry"""
+        success, response = self.run_test(
+            "Delete Purchase Entry",
+            "DELETE",
+            f"purchases/{purchase_id}",
+            200
+        )
+        
+        if success:
+            message = response.get('message', '')
+            if 'deleted successfully' in message:
+                self.log_test("Purchase Deletion Message", True, message)
+            else:
+                self.log_test("Purchase Deletion Message", False, f"Unexpected message: {message}")
+        
+        return success, response
+
+    # HISTORICAL ANALYSIS TESTS
+    def test_save_counts_to_session(self, session_id):
+        """Test saving current stock counts to a session"""
+        success, response = self.run_test(
+            "Save Stock Counts to Session",
+            "POST",
+            f"stock-sessions/{session_id}/save-counts",
+            200
+        )
+        
+        if success:
+            count = response.get('count', 0)
+            if count > 0:
+                self.log_test("Stock Counts Saved", True, f"Saved {count} stock counts")
+            else:
+                self.log_test("Stock Counts Saved", False, "No stock counts were saved")
+        
+        return success, response
+
+    def test_session_comparison(self, session1_id, session2_id):
+        """Test comparing two sessions for usage calculation"""
+        success, response = self.run_test(
+            "Session Comparison Analysis",
+            "GET",
+            f"reports/session-comparison/{session1_id}/{session2_id}",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            required_fields = ['session1_id', 'session2_id', 'item_comparisons', 'total_usage_cost', 'period_days']
+            has_all_fields = all(field in response for field in required_fields)
+            self.log_test("Session Comparison Structure", has_all_fields, f"Fields: {list(response.keys())}")
+            
+            # Check item comparisons
+            item_comparisons = response.get('item_comparisons', [])
+            if item_comparisons:
+                first_item = item_comparisons[0]
+                usage_fields = ['opening_stock', 'purchases_made', 'closing_stock', 'calculated_usage', 'usage_cost']
+                has_usage_fields = all(field in first_item for field in usage_fields)
+                self.log_test("Usage Calculation Fields", has_usage_fields, f"Item fields: {list(first_item.keys())}")
+                
+                # Verify usage calculation formula: opening + purchases - closing = usage
+                opening = first_item.get('opening_stock', 0)
+                purchases = first_item.get('purchases_made', 0)
+                closing = first_item.get('closing_stock', 0)
+                calculated = first_item.get('calculated_usage', 0)
+                expected_usage = opening + purchases - closing
+                
+                if calculated == expected_usage:
+                    self.log_test("Usage Formula Verification", True, f"Formula correct: {opening} + {purchases} - {closing} = {calculated}")
+                else:
+                    self.log_test("Usage Formula Verification", False, f"Expected {expected_usage}, got {calculated}")
+            else:
+                self.log_test("Item Comparisons Data", False, "No item comparisons found")
+        
+        return success, response
+
+    def test_usage_summary_report(self):
+        """Test getting usage summary report"""
+        success, response = self.run_test(
+            "Usage Summary Report",
+            "GET",
+            "reports/usage-summary",
+            200
+        )
+        
+        if success:
+            # Check if it's a proper usage report or a message about insufficient sessions
+            if 'message' in response:
+                message = response.get('message', '')
+                if 'Need at least 2 sessions' in message:
+                    self.log_test("Usage Report Sessions Check", True, "Correctly requires 2+ sessions")
+                else:
+                    self.log_test("Usage Report Message", True, f"Message: {message}")
+            else:
+                # Should have the same structure as session comparison
+                required_fields = ['session1_id', 'session2_id', 'item_comparisons', 'total_usage_cost']
+                has_all_fields = all(field in response for field in required_fields)
+                self.log_test("Usage Summary Structure", has_all_fields, f"Fields: {list(response.keys())}")
+        
+        return success, response
+
+    def test_get_stock_sessions(self):
+        """Test getting all stock sessions"""
+        success, response = self.run_test(
+            "Get Stock Sessions",
+            "GET",
+            "stock-sessions",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            self.log_test("Stock Sessions Format", True, f"Found {len(response)} sessions")
+            
+            if len(response) > 0:
+                session = response[0]
+                required_fields = ['id', 'session_name', 'session_date', 'is_active']
+                has_all_fields = all(field in session for field in required_fields)
+                self.log_test("Session Structure", has_all_fields, f"Fields: {list(session.keys())}")
+        else:
+            self.log_test("Stock Sessions Format", False, "Response is not a list")
+        
+        return success, response
+
+    def test_get_current_session(self):
+        """Test getting current active session"""
+        success, response = self.run_test(
+            "Get Current Session",
+            "GET",
+            "stock-sessions/current",
+            200
+        )
+        
+        if success:
+            if response and 'id' in response:
+                is_active = response.get('is_active', False)
+                if is_active:
+                    self.log_test("Current Session Active", True, f"Active session: {response.get('session_name')}")
+                else:
+                    self.log_test("Current Session Active", False, "Session is not marked as active")
+            else:
+                self.log_test("Current Session Response", True, "No current session (valid state)")
+        
+        return success, response
+
     def run_all_tests(self):
         """Run comprehensive API tests"""
         print("🧪 Starting Bar Stock API Tests")
