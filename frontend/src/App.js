@@ -579,6 +579,8 @@ function StockCounter() {
       loadShoppingList();
     } else if (activeTab === 'quick') {
       loadQuickRestock();
+    } else if (activeTab === 'history') {
+      loadSessions();
     }
   }, [activeTab]);
 
