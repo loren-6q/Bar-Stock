@@ -229,10 +229,28 @@ def test_all_new_features():
                              calculated == expected,
                              f"Opening: {opening}, Purchases: {purchases}, Closing: {closing}, Usage: {calculated}")
                     
-                    # Test the specific scenario from the review
-                    log_test("Complex Scenario Handling", 
-                             opening > 0 and purchases > 0 and closing > 0,
-                             f"Handles scenario: {opening} opening + {purchases} purchases - {closing} closing = {calculated} usage")
+                    # Test the specific scenario from the review - check if we have purchase data
+                    has_purchase_data = any(item.get('purchases_made', 0) > 0 for item in item_comparisons)
+                    log_test("Complex Scenario Handling (Purchase Integration)", 
+                             has_purchase_data,
+                             f"Purchase data integrated: {has_purchase_data}")
+                    
+                    if has_purchase_data:
+                        purchase_item = next(item for item in item_comparisons if item.get('purchases_made', 0) > 0)
+                        p_opening = purchase_item.get('opening_stock', 0)
+                        p_purchases = purchase_item.get('purchases_made', 0)
+                        p_closing = purchase_item.get('closing_stock', 0)
+                        p_usage = purchase_item.get('calculated_usage', 0)
+                        log_test("Purchase Scenario Calculation", 
+                                 p_usage == (p_opening + p_purchases - p_closing),
+                                 f"Scenario: {p_opening} + {p_purchases} - {p_closing} = {p_usage}")
+                
+                # Now test DELETE purchase entry
+                if purchase_id:
+                    delete_response = requests.delete(f"{api_url}/purchases/{purchase_id}")
+                    log_test("DELETE Purchase Entry", 
+                             delete_response.status_code == 200,
+                             f"Status: {delete_response.status_code}")
                 
                 # Test cost calculation
                 total_cost = comparison.get('total_usage_cost', 0)
