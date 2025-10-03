@@ -502,9 +502,9 @@ async def compare_sessions(session1_id: str, session2_id: str):
     if not session1 or not session2:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Get stock counts for both sessions
-    counts1 = await db.stock_counts.find({"session_id": session1_id}).to_list(1000) if "session_id" in str(await db.stock_counts.find_one()) else []
-    counts2 = await db.stock_counts.find({"session_id": session2_id}).to_list(1000) if "session_id" in str(await db.stock_counts.find_one()) else []
+    # Get stock counts for both sessions from historical_counts collection
+    counts1 = await db.historical_counts.find({"session_id": session1_id}).to_list(1000)
+    counts2 = await db.historical_counts.find({"session_id": session2_id}).to_list(1000)
     
     # Get purchases between sessions
     purchases = await db.purchases.find({
