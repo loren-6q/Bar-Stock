@@ -116,6 +116,9 @@ backend:
       - working: false
       - agent: "user"
       - comment: "User reports copy button still not working"
+      - working: false
+      - agent: "testing"
+      - comment: "Backend API endpoints working correctly. Copy functionality is frontend-related, not backend issue."
 
   - task: "Stock session save functionality"
     implemented: true
@@ -128,10 +131,13 @@ backend:
       - working: true
       - agent: "main"
       - comment: "Save Session button exists and creates sessions"
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: POST /api/stock-sessions/{session_id}/save-counts working perfectly. Successfully saves current stock counts to historical tracking with session association."
 
   - task: "Historical tracking and usage calculation"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
@@ -140,10 +146,13 @@ backend:
       - working: "NA"
       - agent: "main"
       - comment: "Need to implement purchase confirmation and usage calculation between periods"
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: GET /api/reports/session-comparison/{session1_id}/{session2_id} and GET /api/reports/usage-summary working perfectly. Complex usage formula (opening + purchases - closing = usage) implemented correctly. Handles scenario: 250 opening + 140 purchases - 200 closing = 190 usage. Total cost calculation working."
 
   - task: "Purchase confirmation system"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
@@ -152,18 +161,24 @@ backend:
       - working: "NA"
       - agent: "main"
       - comment: "System to track actual purchases vs shopping list for accurate usage calculation"
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: Full CRUD operations working - POST /api/purchases (create), GET /api/purchases/session/{session_id} (read), PUT /api/purchases/{purchase_id} (update), DELETE /api/purchases/{purchase_id} (delete). Tracks planned vs actual quantities perfectly. Integrates with usage calculation."
 
   - task: "Complete data import from spreadsheet"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "medium"
     needs_retesting: false
     status_history:
       - working: false
       - agent: "main"
       - comment: "Previous parsing had issues with repeated entries. Spreadsheet data is very messy with duplicates"
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: POST /api/initialize-real-data working perfectly. Successfully initialized 44 comprehensive items including beers, Thai alcohol, import alcohol, mixers, bar supplies, and housekeeping supplies with proper case calculations and pricing."
 
 frontend:
   - task: "Copy to clipboard functionality"
