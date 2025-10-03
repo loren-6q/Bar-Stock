@@ -50,17 +50,49 @@ const suppliers = [
 ];
 
 function CopyTextDialog({ text, supplier, open, onOpenChange }) {
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      onOpenChange(false);
-    }).catch(() => {
-      // Fallback - select the text area for manual copying
+  const { toast } = useToast();
+  
+  const copyToClipboard = async () => {
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        toast({
+          title: "Copied!",
+          description: `Order for ${supplier} copied to clipboard`,
+        });
+        onOpenChange(false);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        toast({
+          title: "Copied!",
+          description: `Order for ${supplier} copied to clipboard`,
+        });
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Copy failed:', error);
+      // Final fallback - select the textarea for manual copying
       const textArea = document.getElementById('copy-text-area');
       if (textArea) {
         textArea.select();
         textArea.focus();
+        toast({
+          title: "Please copy manually",
+          description: "Text has been selected - press Ctrl+C to copy",
+          variant: "destructive",
+        });
       }
-    });
+    }
   };
 
   return (
