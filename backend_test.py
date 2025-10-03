@@ -465,16 +465,16 @@ class BarStockAPITester:
         return success, response
 
     def run_all_tests(self):
-        """Run comprehensive API tests"""
-        print("🧪 Starting Bar Stock API Tests")
-        print("=" * 50)
+        """Run comprehensive API tests including new purchase management and historical analysis"""
+        print("🧪 Starting Comprehensive Bar Stock API Tests")
+        print("=" * 60)
         
-        # Initialize sample data first
-        print("\n📋 Setting up test data...")
-        init_success, _ = self.test_initialize_sample_data()
+        # Initialize enhanced real data first
+        print("\n📋 Setting up enhanced test data...")
+        init_success, init_response = self.test_initialize_real_data()
         
         if not init_success:
-            print("❌ Failed to initialize sample data. Stopping tests.")
+            print("❌ Failed to initialize enhanced real data. Stopping tests.")
             return False
         
         # Test items endpoint
@@ -485,15 +485,23 @@ class BarStockAPITester:
             print("❌ No items found. Cannot continue with stock tests.")
             return False
         
-        # Use first item for stock count tests
+        # Store test item IDs for later use
+        self.test_item_ids = [item['id'] for item in items[:5]]  # Use first 5 items
+        
+        # Use first few items for comprehensive testing
         test_item_id = items[0]['id']
-        print(f"\n📊 Testing Stock Counts with item: {items[0]['name']} (ID: {test_item_id})")
+        test_item_name = items[0]['name']
+        print(f"\n📊 Testing Stock Counts with item: {test_item_name} (ID: {test_item_id})")
         
-        # Test stock count creation
+        # Test stock count creation and updates
         create_success, _ = self.test_create_stock_count(test_item_id)
-        
-        # Test stock count update
         update_success, _ = self.test_update_stock_count(test_item_id)
+        
+        # Create stock counts for multiple items to enable meaningful tests
+        print("\n📊 Creating stock counts for multiple items...")
+        for i, item in enumerate(items[:5]):
+            if i > 0:  # Skip first item as it's already created
+                self.test_create_stock_count(item['id'])
         
         # Test getting all stock counts
         print("\n📋 Testing Stock Count Retrieval...")
@@ -507,15 +515,86 @@ class BarStockAPITester:
         print("\n⚡ Testing Quick Restock...")
         self.test_quick_restock()
         
-        # Print summary
-        print("\n" + "=" * 50)
-        print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        # NEW TESTS: Stock Sessions and Purchase Management
+        print("\n🗂️  Testing Stock Sessions...")
+        session1_success, _ = self.test_create_stock_session("Opening Count Session")
+        
+        if session1_success and self.test_session_id:
+            # Save current stock counts to first session
+            print("\n💾 Testing Save Stock Counts to Session...")
+            self.test_save_counts_to_session(self.test_session_id)
+            
+            # Test purchase management
+            print("\n💰 Testing Purchase Management...")
+            purchase_success, _ = self.test_create_purchase_entry(self.test_session_id, test_item_id)
+            
+            if purchase_success and self.test_purchase_ids:
+                # Test getting session purchases
+                self.test_get_session_purchases(self.test_session_id)
+                
+                # Test updating purchase entry
+                self.test_update_purchase_entry(self.test_purchase_ids[0])
+                
+                # Create additional purchases for better testing
+                for item_id in self.test_item_ids[1:3]:  # Create 2 more purchases
+                    self.test_create_purchase_entry(self.test_session_id, item_id)
+            
+            # Wait a moment then create second session for comparison
+            print("\n⏱️  Creating second session for historical analysis...")
+            time.sleep(1)  # Ensure different timestamps
+            
+            # Update some stock counts to simulate usage
+            print("\n📊 Simulating stock usage...")
+            for item_id in self.test_item_ids[:3]:
+                # Reduce stock to simulate consumption
+                update_data = {
+                    "main_bar": 5,
+                    "beer_bar": 8,
+                    "lobby": 2,
+                    "storage_room": 15
+                }
+                self.run_test(f"Update Stock for Usage Simulation", "PUT", f"stock-counts/{item_id}", 200, data=update_data)
+            
+            session2_success, _ = self.test_create_stock_session("Closing Count Session")
+            
+            if session2_success and self.test_session2_id:
+                # Save counts to second session
+                self.test_save_counts_to_session(self.test_session2_id)
+                
+                # Test historical analysis
+                print("\n📈 Testing Historical Analysis...")
+                self.test_session_comparison(self.test_session_id, self.test_session2_id)
+                
+                # Test usage summary report
+                self.test_usage_summary_report()
+        
+        # Test session management endpoints
+        print("\n🗂️  Testing Session Management...")
+        self.test_get_stock_sessions()
+        self.test_get_current_session()
+        
+        # Clean up test data (delete one purchase to test deletion)
+        if self.test_purchase_ids:
+            print("\n🗑️  Testing Purchase Deletion...")
+            self.test_delete_purchase_entry(self.test_purchase_ids[-1])
+        
+        # Print comprehensive summary
+        print("\n" + "=" * 60)
+        print(f"📊 Comprehensive Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        print(f"📈 Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        # Categorize results
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print(f"\n❌ Failed Tests ({len(failed_tests)}):")
+            for test in failed_tests:
+                print(f"   • {test['test_name']}: {test['details']}")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All tests passed!")
+            print("\n🎉 All tests passed! New functionality is working correctly.")
             return True
         else:
-            print("⚠️  Some tests failed. Check details above.")
+            print(f"\n⚠️  {self.tests_run - self.tests_passed} tests failed. Check details above.")
             return False
 
 def main():
