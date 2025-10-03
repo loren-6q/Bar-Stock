@@ -506,9 +506,13 @@ async def compare_sessions(session1_id: str, session2_id: str):
     counts1 = await db.historical_counts.find({"session_id": session1_id}).to_list(1000)
     counts2 = await db.historical_counts.find({"session_id": session2_id}).to_list(1000)
     
-    # Get purchases between sessions
+    # Get purchases between sessions (purchases made after session1 and before/during session2)
+    # For now, we'll look for purchases in either session
     purchases = await db.purchases.find({
-        "session_id": session2_id
+        "$or": [
+            {"session_id": session1_id},
+            {"session_id": session2_id}
+        ]
     }).to_list(1000)
     
     # Get all items for reference
