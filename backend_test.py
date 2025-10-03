@@ -218,9 +218,9 @@ class BarStockAPITester:
         if success:
             session_id = response.get('id')
             if session_id:
-                if session_name == "Test Session":
+                if session_name == "Opening Count Session":
                     self.test_session_id = session_id
-                else:
+                elif session_name == "Closing Count Session":
                     self.test_session2_id = session_id
                 self.log_test("Session ID Generated", True, f"Session ID: {session_id}")
             else:
