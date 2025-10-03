@@ -135,7 +135,24 @@ function StockCounter() {
   const copyToClipboard = async (supplier) => {
     try {
       const response = await axios.get(`${API}/shopping-list-text/${supplier}`);
-      await navigator.clipboard.writeText(response.data.text);
+      
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(response.data.text);
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        const textArea = document.createElement('textarea');
+        textArea.value = response.data.text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      
       toast({
         title: "Copied to clipboard!",
         description: `${supplier} order list copied for messaging`,
@@ -143,8 +160,8 @@ function StockCounter() {
     } catch (error) {
       console.error('Error copying to clipboard:', error);
       toast({
-        title: "Copy failed",
-        description: "Could not copy to clipboard",
+        title: "Copy failed", 
+        description: "Could not copy to clipboard. Try selecting and copying manually.",
         variant: "destructive",
       });
     }
