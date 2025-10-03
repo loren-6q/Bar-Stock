@@ -111,6 +111,51 @@ class StockSessionCreate(BaseModel):
     session_type: str = "full_count"
     notes: Optional[str] = None
 
+# New models for historical tracking and purchase confirmation
+class PurchaseEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    item_id: str
+    planned_quantity: int  # from shopping list
+    actual_quantity: int  # what was actually bought
+    cost_per_unit: float
+    total_cost: float
+    supplier: str
+    purchase_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: Optional[str] = None
+
+class PurchaseEntryCreate(BaseModel):
+    session_id: str
+    item_id: str
+    planned_quantity: int
+    actual_quantity: int
+    cost_per_unit: float
+    total_cost: float
+    supplier: str
+    notes: Optional[str] = None
+
+class SessionComparison(BaseModel):
+    session1_id: str
+    session1_name: str
+    session1_date: datetime
+    session2_id: str
+    session2_name: str
+    session2_date: datetime
+    item_comparisons: List[Dict[str, Any]]
+    total_usage_cost: float
+    period_days: int
+
+class UsageReport(BaseModel):
+    item_id: str
+    item_name: str
+    opening_stock: int
+    purchases_made: int
+    closing_stock: int
+    calculated_usage: int
+    cost_per_unit: float
+    total_usage_cost: float
+    supplier: str
+
 # Helper function to calculate cases
 def calculate_cases(units_needed: int, units_per_case: int) -> CaseCalculation:
     if units_per_case <= 1:
