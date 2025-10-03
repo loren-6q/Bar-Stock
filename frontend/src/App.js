@@ -895,6 +895,128 @@ function StockCounter() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="history" className="space-y-4" data-testid="history-content">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Stock History & Usage Reports</CardTitle>
+                <p className="text-gray-600 text-sm">Compare stock sessions and track usage over time</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Session Selection */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Compare From Session</Label>
+                      <Select value={selectedSessions.session1} onValueChange={(value) => 
+                        setSelectedSessions(prev => ({...prev, session1: value}))
+                      }>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select first session" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sessions.map(session => (
+                            <SelectItem key={session.id} value={session.id}>
+                              {session.session_name} ({new Date(session.session_date).toLocaleDateString()})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>To Session</Label>
+                      <Select value={selectedSessions.session2} onValueChange={(value) => 
+                        setSelectedSessions(prev => ({...prev, session2: value}))
+                      }>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select second session" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sessions.map(session => (
+                            <SelectItem key={session.id} value={session.id}>
+                              {session.session_name} ({new Date(session.session_date).toLocaleDateString()})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button onClick={generateUsageReport} className="w-full">
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Generate Usage Report
+                  </Button>
+
+                  {/* Usage Report Display */}
+                  {usageReport && (
+                    <Card className="bg-slate-50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">
+                          Usage Report: {usageReport.session1_name} → {usageReport.session2_name}
+                        </CardTitle>
+                        <div className="flex gap-4 text-xs text-gray-600">
+                          <span>Period: {usageReport.period_days} days</span>
+                          <span>Total Cost: ฿{usageReport.total_usage_cost.toFixed(2)}</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {usageReport.item_comparisons.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-white rounded border text-sm">
+                              <div className="flex-1">
+                                <div className="font-medium">{item.item_name}</div>
+                                <div className="text-xs text-gray-500">
+                                  Opening: {item.opening_stock} + Purchased: {item.purchases_made} - Closing: {item.closing_stock} = Used: {item.calculated_usage}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium text-red-600">
+                                  ฿{item.usage_cost.toFixed(2)}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  @ ฿{item.cost_per_unit}/unit
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Sessions List */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Recent Sessions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {sessions.slice(0, 10).map(session => (
+                          <div key={session.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <div className="font-medium text-sm">{session.session_name}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(session.session_date).toLocaleString()} • {session.session_type}
+                                {session.is_active && <Badge className="ml-2 text-xs bg-green-100 text-green-800">Active</Badge>}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadSessionPurchases(session.id)}
+                              className="text-xs"
+                            >
+                              View Purchases
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         <ItemEditDialog
