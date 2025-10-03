@@ -6,10 +6,13 @@ import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Badge } from './components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+import { Label } from './components/ui/label';
 import { Separator } from './components/ui/separator';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Copy, Package, Calculator } from 'lucide-react';
+import { Copy, Package, Calculator, Edit, Plus, Trash2, Save, X } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -32,6 +35,190 @@ const supplierColors = {
   'Other': 'bg-gray-500'
 };
 
+const categories = [
+  { value: 'B', label: 'Beer' },
+  { value: 'A', label: 'Thai Alcohol' },
+  { value: 'A', label: 'Import Alcohol' },
+  { value: 'M', label: 'Mixers' },
+  { value: 'O', label: 'Other Bar' },
+  { value: 'Z', label: 'Hostel Supplies' }
+];
+
+const suppliers = [
+  'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui Shops', 'Mr DIY', 'Other'
+];
+
+function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    category: 'B',
+    category_name: 'Beer',
+    units_per_case: 1,
+    min_stock: 0,
+    max_stock: 0,
+    primary_supplier: 'Singha99',
+    cost_per_unit: 0,
+    cost_per_case: 0
+  });
+
+  useEffect(() => {
+    if (item && !isNew) {
+      setFormData(item);
+    } else if (isNew) {
+      setFormData({
+        name: '',
+        category: 'B',
+        category_name: 'Beer',
+        units_per_case: 1,
+        min_stock: 0,
+        max_stock: 0,
+        primary_supplier: 'Singha99',
+        cost_per_unit: 0,
+        cost_per_case: 0
+      });
+    }
+  }, [item, isNew]);
+
+  const handleSave = () => {
+    // Auto-calculate cost per case if not provided
+    if (formData.cost_per_case === 0 && formData.cost_per_unit > 0 && formData.units_per_case > 1) {
+      formData.cost_per_case = formData.cost_per_unit * formData.units_per_case;
+    }
+    onSave(formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{isNew ? 'Add New Item' : 'Edit Item'}</DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Item Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="e.g. Big Chang, Vodka"
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={formData.category_name} onValueChange={(value) => {
+                const cat = value === 'Beer' ? 'B' : 
+                           value === 'Thai Alcohol' || value === 'Import Alcohol' ? 'A' :
+                           value === 'Mixers' ? 'M' :
+                           value === 'Other Bar' ? 'O' : 'Z';
+                setFormData({...formData, category: cat, category_name: value});
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Beer">Beer</SelectItem>
+                  <SelectItem value="Thai Alcohol">Thai Alcohol</SelectItem>
+                  <SelectItem value="Import Alcohol">Import Alcohol</SelectItem>
+                  <SelectItem value="Mixers">Mixers</SelectItem>
+                  <SelectItem value="Other Bar">Other Bar</SelectItem>
+                  <SelectItem value="Hostel Supplies">Hostel Supplies</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="units_per_case">Units per Case/Box</Label>
+              <Input
+                id="units_per_case"
+                type="number"
+                min="1"
+                value={formData.units_per_case}
+                onChange={(e) => setFormData({...formData, units_per_case: parseInt(e.target.value) || 1})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="min_stock">Min Stock</Label>
+              <Input
+                id="min_stock"
+                type="number"
+                min="0"
+                value={formData.min_stock}
+                onChange={(e) => setFormData({...formData, min_stock: parseInt(e.target.value) || 0})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="max_stock">Max Stock</Label>
+              <Input
+                id="max_stock"
+                type="number"
+                min="0"
+                value={formData.max_stock}
+                onChange={(e) => setFormData({...formData, max_stock: parseInt(e.target.value) || 0})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="supplier">Primary Supplier</Label>
+            <Select value={formData.primary_supplier} onValueChange={(value) => setFormData({...formData, primary_supplier: value})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map(supplier => (
+                  <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="cost_per_unit">Cost per Unit (฿)</Label>
+              <Input
+                id="cost_per_unit"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.cost_per_unit}
+                onChange={(e) => setFormData({...formData, cost_per_unit: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="cost_per_case">Cost per Case (฿)</Label>
+              <Input
+                id="cost_per_case"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.cost_per_case}
+                onChange={(e) => setFormData({...formData, cost_per_case: parseFloat(e.target.value) || 0})}
+                placeholder={formData.units_per_case > 1 && formData.cost_per_unit > 0 ? 
+                  `Auto: ${(formData.cost_per_unit * formData.units_per_case).toFixed(2)}` : ''}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            <Save className="w-4 h-4 mr-2" />
+            {isNew ? 'Add Item' : 'Save Changes'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function StockCounter() {
   const [items, setItems] = useState([]);
   const [stockCounts, setStockCounts] = useState({});
@@ -39,6 +226,9 @@ function StockCounter() {
   const [activeTab, setActiveTab] = useState('count');
   const [shoppingList, setShoppingList] = useState({});
   const [quickRestock, setQuickRestock] = useState([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [isNewItem, setIsNewItem] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -167,6 +357,66 @@ function StockCounter() {
     }
   };
 
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setIsNewItem(false);
+    setEditDialogOpen(true);
+  };
+
+  const handleAddItem = () => {
+    setEditingItem(null);
+    setIsNewItem(true);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveItem = async (itemData) => {
+    try {
+      if (isNewItem) {
+        await axios.post(`${API}/items`, itemData);
+        toast({
+          title: "Item added",
+          description: "New item added successfully",
+        });
+      } else {
+        await axios.put(`${API}/items/${editingItem.id}`, itemData);
+        toast({
+          title: "Item updated",
+          description: "Item updated successfully",
+        });
+      }
+      
+      setEditDialogOpen(false);
+      loadItems(); // Reload items
+    } catch (error) {
+      console.error('Error saving item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteItem = async (item) => {
+    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
+      try {
+        await axios.delete(`${API}/items/${item.id}`);
+        toast({
+          title: "Item deleted",
+          description: "Item deleted successfully",
+        });
+        loadItems();
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete item",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'shopping') {
       loadShoppingList();
@@ -201,10 +451,11 @@ function StockCounter() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8" data-testid="main-tabs">
+          <TabsList className="grid w-full grid-cols-4 mb-8" data-testid="main-tabs">
             <TabsTrigger value="count" data-testid="count-tab">Stock Count</TabsTrigger>
             <TabsTrigger value="shopping" data-testid="shopping-tab">Shopping List</TabsTrigger>
             <TabsTrigger value="quick" data-testid="quick-tab">Low Stock Alert</TabsTrigger>
+            <TabsTrigger value="manage" data-testid="manage-tab">Manage Items</TabsTrigger>
           </TabsList>
 
           <TabsContent value="count" className="space-y-4" data-testid="count-content">
@@ -382,7 +633,80 @@ function StockCounter() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="manage" className="space-y-4" data-testid="manage-content">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Manage Items</CardTitle>
+                    <p className="text-gray-600">Add, edit, or remove items from your inventory</p>
+                  </div>
+                  <Button onClick={handleAddItem} data-testid="add-item-btn">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {items.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-medium">{item.name}</h4>
+                          <Badge className={`${categoryColors[item.category]} text-xs`}>
+                            {item.category_name}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {item.primary_supplier}
+                          </Badge>
+                          {item.units_per_case > 1 && (
+                            <Badge variant="outline" className="text-xs">
+                              {item.units_per_case}/case
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          Min: {item.min_stock} • Max: {item.max_stock} • Unit: ฿{item.cost_per_unit}
+                          {item.cost_per_case > 0 && ` • Case: ฿${item.cost_per_case}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditItem(item)}
+                          data-testid={`edit-item-${item.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteItem(item)}
+                          className="text-red-600 hover:text-red-700"
+                          data-testid={`delete-item-${item.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        <ItemEditDialog
+          item={editingItem}
+          isNew={isNewItem}
+          onSave={handleSaveItem}
+          onCancel={() => setEditDialogOpen(false)}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
 
         <Toaster />
       </div>

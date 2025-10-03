@@ -98,6 +98,19 @@ class ShoppingListItem(BaseModel):
     cost_per_case: float
     estimated_cost: float
 
+class StockSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_name: str
+    session_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+    session_type: str = "full_count"  # full_count or quick_restock
+    notes: Optional[str] = None
+
+class StockSessionCreate(BaseModel):
+    session_name: str
+    session_type: str = "full_count"
+    notes: Optional[str] = None
+
 # Helper function to calculate cases
 def calculate_cases(units_needed: int, units_per_case: int) -> CaseCalculation:
     if units_per_case <= 1:
@@ -183,6 +196,17 @@ async def update_item(item_id: str, item_update: ItemCreate):
     
     updated_item = await db.items.find_one({"id": item_id})
     return Item(**parse_from_mongo(updated_item))
+
+@api_router.delete("/items/{item_id}")
+async def delete_item(item_id: str):
+    # Also delete associated stock counts
+    await db.stock_counts.delete_many({"item_id": item_id})
+    
+    result = await db.items.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return {"message": "Item deleted successfully"}
 
 # Stock counting endpoints
 @api_router.post("/stock-counts", response_model=StockCount)
@@ -368,6 +392,28 @@ async def get_quick_restock():
             })
     
     return low_stock_items
+
+# Stock Sessions for historical tracking
+@api_router.post("/stock-sessions", response_model=StockSession)
+async def create_stock_session(session: StockSessionCreate):
+    # Mark all other sessions as inactive
+    await db.stock_sessions.update_many({}, {"$set": {"is_active": False}})
+    
+    session_obj = StockSession(**session.dict())
+    await db.stock_sessions.insert_one(prepare_for_mongo(session_obj.dict()))
+    return session_obj
+
+@api_router.get("/stock-sessions", response_model=List[StockSession])
+async def get_stock_sessions():
+    sessions = await db.stock_sessions.find().sort("session_date", -1).to_list(100)
+    return [StockSession(**parse_from_mongo(session)) for session in sessions]
+
+@api_router.get("/stock-sessions/current", response_model=Optional[StockSession])
+async def get_current_session():
+    session = await db.stock_sessions.find_one({"is_active": True})
+    if session:
+        return StockSession(**parse_from_mongo(session))
+    return None
 
 # Initialize with real data from spreadsheet
 @api_router.post("/initialize-real-data")
