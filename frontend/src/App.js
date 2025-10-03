@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Label } from './components/ui/label';
+import { Textarea } from './components/ui/textarea';
 import { Separator } from './components/ui/separator';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Copy, Package, Calculator, Edit, Plus, Trash2, Save, X } from 'lucide-react';
+import { Copy, Package, Calculator, Edit, Plus, Trash2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -45,8 +46,51 @@ const categories = [
 ];
 
 const suppliers = [
-  'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui Shops', 'Mr DIY', 'Other'
+  'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui Shops', 'Mr DIY', 'Haad Rin', 'Jacky Chang', 'Other'
 ];
+
+function CopyTextDialog({ text, supplier, open, onOpenChange }) {
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      onOpenChange(false);
+    }).catch(() => {
+      // Fallback - select the text area for manual copying
+      const textArea = document.getElementById('copy-text-area');
+      if (textArea) {
+        textArea.select();
+        textArea.focus();
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Copy Order for {supplier}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Textarea
+            id="copy-text-area"
+            value={text}
+            readOnly
+            className="min-h-[300px] font-mono text-sm"
+            data-testid="copy-text-area"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+            <Button onClick={copyToClipboard} data-testid="copy-button">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to Clipboard
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
   const [formData, setFormData] = useState({
@@ -229,11 +273,16 @@ function StockCounter() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [isNewItem, setIsNewItem] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyText, setCopyText] = useState('');
+  const [copySupplier, setCopySupplier] = useState('');
+  const [currentSession, setCurrentSession] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
     loadItems();
     loadStockCounts();
+    loadCurrentSession();
   }, []);
 
   const loadItems = async () => {
@@ -280,6 +329,45 @@ function StockCounter() {
     }
   };
 
+  const loadCurrentSession = async () => {
+    try {
+      const response = await axios.get(`${API}/stock-sessions/current`);
+      if (response.data) {
+        setCurrentSession(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading current session:', error);
+    }
+  };
+
+  const saveStockCountSession = async () => {
+    const sessionName = prompt("Enter session name (e.g., 'Pre-Party Stock Count - October 3'):"); 
+    if (!sessionName) return;
+
+    try {
+      const sessionData = {
+        session_name: sessionName,
+        session_type: "full_count",
+        notes: `Stock count completed with ${Object.keys(stockCounts).length} items counted`
+      };
+      
+      const response = await axios.post(`${API}/stock-sessions`, sessionData);
+      setCurrentSession(response.data);
+      
+      toast({
+        title: "Stock count saved!",
+        description: `Session "${sessionName}" has been saved to history`,
+      });
+    } catch (error) {
+      console.error('Error saving stock session:', error);
+      toast({
+        title: "Error saving session",
+        description: "Could not save stock count session",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateStockCount = async (itemId, location, value) => {
     try {
       const updateData = {};
@@ -290,10 +378,7 @@ function StockCounter() {
       // Reload stock counts to get fresh data
       loadStockCounts();
 
-      toast({
-        title: "Count updated",
-        description: "Stock count saved successfully",
-      });
+      // Auto-save indication (no toast spam)
     } catch (error) {
       console.error('Error updating stock count:', error);
       toast({
@@ -322,36 +407,17 @@ function StockCounter() {
     }
   };
 
-  const copyToClipboard = async (supplier) => {
+  const showCopyDialog = async (supplier) => {
     try {
       const response = await axios.get(`${API}/shopping-list-text/${supplier}`);
-      
-      // Try modern clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(response.data.text);
-      } else {
-        // Fallback for older browsers or non-HTTPS
-        const textArea = document.createElement('textarea');
-        textArea.value = response.data.text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        textArea.remove();
-      }
-      
-      toast({
-        title: "Copied to clipboard!",
-        description: `${supplier} order list copied for messaging`,
-      });
+      setCopyText(response.data.text);
+      setCopySupplier(supplier);
+      setCopyDialogOpen(true);
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
+      console.error('Error loading copy text:', error);
       toast({
-        title: "Copy failed", 
-        description: "Could not copy to clipboard. Try selecting and copying manually.",
+        title: "Error",
+        description: "Could not prepare copy text",
         variant: "destructive",
       });
     }
@@ -429,6 +495,10 @@ function StockCounter() {
     return items.reduce((total, item) => total + item.estimated_cost, 0);
   };
 
+  const getTotalItemsCounted = () => {
+    return Object.values(stockCounts).reduce((total, count) => total + count.total_count, 0);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
@@ -441,25 +511,58 @@ function StockCounter() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2" data-testid="app-title">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16">
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="app-title">
             Bar Stock Manager
           </h1>
-          <p className="text-gray-600">Track inventory across all locations • Case calculations included</p>
+          <p className="text-gray-600 text-sm">Track inventory across all locations • Case calculations included</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8" data-testid="main-tabs">
-            <TabsTrigger value="count" data-testid="count-tab">Stock Count</TabsTrigger>
-            <TabsTrigger value="shopping" data-testid="shopping-tab">Shopping List</TabsTrigger>
-            <TabsTrigger value="quick" data-testid="quick-tab">Low Stock Alert</TabsTrigger>
-            <TabsTrigger value="manage" data-testid="manage-tab">Manage Items</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-6" data-testid="main-tabs">
+            <TabsTrigger value="count" data-testid="count-tab" className="text-sm">Count</TabsTrigger>
+            <TabsTrigger value="shopping" data-testid="shopping-tab" className="text-sm">Shopping</TabsTrigger>
+            <TabsTrigger value="quick" data-testid="quick-tab" className="text-sm">Alerts</TabsTrigger>
+            <TabsTrigger value="manage" data-testid="manage-tab" className="text-sm">Manage</TabsTrigger>
           </TabsList>
 
           <TabsContent value="count" className="space-y-4" data-testid="count-content">
-            <div className="grid gap-4">
+            {/* Stock Count Session Header */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h3 className="font-semibold text-blue-900">Stock Count Session</h3>
+                      <p className="text-sm text-blue-700">
+                        {currentSession ? 
+                          `Active: ${currentSession.session_name}` : 
+                          'No active session - counts will be saved automatically'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                      {getTotalItemsCounted()} items counted
+                    </Badge>
+                    <Button 
+                      onClick={saveStockCountSession}
+                      size="sm"
+                      data-testid="save-stock-session"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Session
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-3">
               {items.map(item => {
                 const count = stockCounts[item.id] || { main_bar: 0, beer_bar: 0, lobby: 0, storage_room: 0, total_count: 0 };
                 
@@ -467,8 +570,8 @@ function StockCounter() {
                   <Card key={item.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all duration-200" data-testid={`item-card-${item.id}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-sm font-semibold">{item.name}</CardTitle>
                           <Badge className={`${categoryColors[item.category]} text-xs`}>
                             {item.category_name}
                           </Badge>
@@ -480,7 +583,7 @@ function StockCounter() {
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
+                          <div className="text-lg font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
                             {count.total_count}
                           </div>
                           <div className="text-xs text-gray-500">Total</div>
@@ -488,7 +591,7 @@ function StockCounter() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {[
                           { key: 'main_bar', label: 'Main Bar', icon: '🍺' },
                           { key: 'beer_bar', label: 'Beer Bar', icon: '🍻' },
@@ -505,7 +608,7 @@ function StockCounter() {
                               min="0"
                               value={count[location.key] || ''}
                               onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                              className="text-center font-medium h-8 text-sm"
+                              className="text-center font-medium h-7 text-sm"
                               placeholder="0"
                               data-testid={`count-input-${item.id}-${location.key}`}
                             />
@@ -519,29 +622,29 @@ function StockCounter() {
             </div>
           </TabsContent>
 
-          <TabsContent value="shopping" className="space-y-4" data-testid="shopping-content">
-            <div className="grid gap-4">
+          <TabsContent value="shopping" className="space-y-3" data-testid="shopping-content">
+            <div className="grid gap-3">
               {Object.entries(shoppingList).map(([supplier, items]) => {
                 const totalCost = getTotalCostBySupplier(items);
                 const supplierColor = supplierColors[supplier] || supplierColors['Other'];
                 
                 return (
-                  <Card key={supplier} className="shadow-lg" data-testid={`supplier-card-${supplier}`}>
-                    <CardHeader className={`${supplierColor} text-white rounded-t-lg`}>
+                  <Card key={supplier} className="shadow-sm" data-testid={`supplier-card-${supplier}`}>
+                    <CardHeader className={`${supplierColor} text-white rounded-t-lg py-3`}>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-bold">{supplier}</CardTitle>
+                        <CardTitle className="text-base font-bold">{supplier}</CardTitle>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                          <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-xs">
                             ฿{totalCost.toFixed(2)}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => copyToClipboard(supplier)}
-                            className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                            onClick={() => showCopyDialog(supplier)}
+                            className="text-white hover:bg-white/20 h-7 w-7 p-0"
                             data-testid={`copy-${supplier}`}
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -549,13 +652,13 @@ function StockCounter() {
                     <CardContent className="p-0">
                       <div className="divide-y">
                         {items.map((item, index) => (
-                          <div key={index} className="p-3 hover:bg-gray-50 transition-colors" data-testid={`shopping-item-${item.item_id}`}>
+                          <div key={index} className="p-2 hover:bg-gray-50 transition-colors" data-testid={`shopping-item-${item.item_id}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-sm">{item.item_name}</h4>
-                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-4">
-                                  <span>Current: {item.current_stock}</span>
-                                  <span>Target: {item.max_stock}</span>
+                                <h4 className="font-medium text-gray-900 text-xs">{item.item_name}</h4>
+                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                                  <span>Now: {item.current_stock}</span>
+                                  <span>Max: {item.max_stock}</span>
                                   {item.case_calculation.cases_to_buy > 0 && (
                                     <span className="flex items-center gap-1 text-blue-600">
                                       <Calculator className="w-3 h-3" />
@@ -565,7 +668,7 @@ function StockCounter() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-bold text-green-600">
+                                <div className="text-xs font-bold text-green-600">
                                   {item.case_calculation.cases_to_buy > 0 
                                     ? `${item.case_calculation.cases_to_buy} cases` 
                                     : `${item.need_to_buy_units} units`}
@@ -584,11 +687,11 @@ function StockCounter() {
               })}
               
               {Object.keys(shoppingList).length === 0 && (
-                <Card className="text-center py-12" data-testid="no-shopping-items">
+                <Card className="text-center py-8" data-testid="no-shopping-items">
                   <CardContent>
-                    <div className="text-6xl mb-4">✅</div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">All Stocked Up!</h3>
-                    <p className="text-gray-600">No items need restocking at the moment.</p>
+                    <div className="text-4xl mb-4">✅</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">All Stocked Up!</h3>
+                    <p className="text-gray-600 text-sm">No items need restocking at the moment.</p>
                   </CardContent>
                 </Card>
               )}
@@ -597,26 +700,26 @@ function StockCounter() {
 
           <TabsContent value="quick" className="space-y-4" data-testid="quick-content">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-red-500">⚠️</span>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
                   Low Stock Alert
                 </CardTitle>
-                <p className="text-gray-600">Items below minimum stock levels</p>
+                <p className="text-gray-600 text-sm">Items below minimum stock levels</p>
               </CardHeader>
               <CardContent>
                 {quickRestock.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-4xl mb-4">✅</div>
-                    <p className="text-gray-600">All items are above minimum stock levels</p>
+                  <div className="text-center py-6">
+                    <div className="text-3xl mb-3">✅</div>
+                    <p className="text-gray-600 text-sm">All items are above minimum stock levels</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {quickRestock.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg" data-testid={`low-stock-${item.item_id}`}>
+                      <div key={index} className="flex items-center justify-between p-2 bg-red-50 border border-red-200 rounded-lg" data-testid={`low-stock-${item.item_id}`}>
                         <div>
-                          <h4 className="font-medium text-gray-900">{item.item_name}</h4>
-                          <p className="text-sm text-gray-600">{item.category} • {item.primary_supplier}</p>
+                          <h4 className="font-medium text-gray-900 text-sm">{item.item_name}</h4>
+                          <p className="text-xs text-gray-600">{item.category} • {item.primary_supplier}</p>
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-bold text-red-600">
@@ -636,25 +739,25 @@ function StockCounter() {
 
           <TabsContent value="manage" className="space-y-4" data-testid="manage-content">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Manage Items</CardTitle>
-                    <p className="text-gray-600">Add, edit, or remove items from your inventory</p>
+                    <CardTitle className="text-base">Manage Items</CardTitle>
+                    <p className="text-gray-600 text-sm">Add, edit, or remove items from your inventory</p>
                   </div>
-                  <Button onClick={handleAddItem} data-testid="add-item-btn">
-                    <Plus className="w-4 h-4 mr-2" />
+                  <Button onClick={handleAddItem} data-testid="add-item-btn" size="sm">
+                    <Plus className="w-4 h-4 mr-1" />
                     Add Item
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {items.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
                       <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{item.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-sm">{item.name}</h4>
                           <Badge className={`${categoryColors[item.category]} text-xs`}>
                             {item.category_name}
                           </Badge>
@@ -667,28 +770,29 @@ function StockCounter() {
                             </Badge>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 mt-1">
                           Min: {item.min_stock} • Max: {item.max_stock} • Unit: ฿{item.cost_per_unit}
                           {item.cost_per_case > 0 && ` • Case: ฿${item.cost_per_case}`}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditItem(item)}
                           data-testid={`edit-item-${item.id}`}
+                          className="h-7 w-7 p-0"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3 h-3" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteItem(item)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
                           data-testid={`delete-item-${item.id}`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
@@ -708,8 +812,18 @@ function StockCounter() {
           onOpenChange={setEditDialogOpen}
         />
 
+        <CopyTextDialog
+          text={copyText}
+          supplier={copySupplier}
+          open={copyDialogOpen}
+          onOpenChange={setCopyDialogOpen}
+        />
+
         <Toaster />
       </div>
+      
+      {/* Bottom spacing for last input accessibility */}
+      <div className="h-20"></div>
     </div>
   );
 }
