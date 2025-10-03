@@ -611,44 +611,63 @@ async def initialize_real_data():
     await db.items.delete_many({})
     await db.stock_counts.delete_many({})
     
-    # Real items based on the spreadsheet with proper case calculations
+    # Enhanced real items based on the spreadsheet with proper case calculations and complete data
     real_items = [
-        # Beers (most common items)
-        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 50, "max_stock": 200, "primary_supplier": "Singha99", "cost_per_unit": 32.0, "cost_per_case": 750.0},
-        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 50, "max_stock": 200, "primary_supplier": "Singha99", "cost_per_unit": 28.0, "cost_per_case": 650.0},
-        {"name": "Big Leo", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 35.0, "cost_per_case": 400.0},
-        {"name": "Small Leo", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 30.0, "cost_per_case": 700.0},
-        {"name": "Big Singha", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 38.0, "cost_per_case": 440.0},
-        {"name": "Small Singha", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 32.0, "cost_per_case": 750.0},
-        {"name": "Small Heineken", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 20, "max_stock": 80, "primary_supplier": "Singha99", "cost_per_unit": 42.0, "cost_per_case": 980.0},
+        # Beers (most popular items)
+        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 15, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 44.0, "cost_per_case": 660.0},
+        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0},
+        {"name": "Big Leo", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0},
+        {"name": "Small Leo", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0},
+        {"name": "Big Singha", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 50.08, "cost_per_case": 601.0},
+        {"name": "Small Singha", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 27.08, "cost_per_case": 650.0},
+        {"name": "Small Heineken", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 31.75, "cost_per_case": 762.0},
+        {"name": "Small San Miguel Lite", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 30.75, "cost_per_case": 738.0},
+        {"name": "Bam Bam (can)", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 14.0, "cost_per_case": 168.0},
+        {"name": "Soju", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 0.75, "cost_per_case": 9.0},
         
-        # Thai Alcohol
-        {"name": "Sangsom (Black)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 8, "max_stock": 30, "primary_supplier": "Singha99", "cost_per_unit": 220.0, "cost_per_case": 2500.0},
-        {"name": "Hong Thong", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 8, "max_stock": 30, "primary_supplier": "Singha99", "cost_per_unit": 190.0, "cost_per_case": 2200.0},
-        {"name": "Thai Tequila", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 4, "max_stock": 15, "primary_supplier": "Singha99", "cost_per_unit": 280.0},
-        {"name": "Fox (Jagermeister)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Singha99", "cost_per_unit": 320.0},
+        # Thai Alcohol 
+        {"name": "Charles House Rum", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 24.0, "cost_per_case": 288.0},
+        {"name": "Charles House Gin", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 23.0, "cost_per_case": 276.0},
+        {"name": "Yeow Ngeah Vodka", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Vendor", "cost_per_unit": 15.0, "cost_per_case": 180.0},
+        {"name": "Sangsom (Black)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0},
+        {"name": "Hong Thong", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 48.0},
         
-        # Import Alcohol (by bottle)
-        {"name": "Jack Daniels", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "zBKK", "cost_per_unit": 1200.0},
-        {"name": "Bacardi Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
+        # Import Alcohol (premium by bottle)
+        {"name": "Bacardi Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
+        {"name": "Jack Daniels", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "zBKK", "cost_per_unit": 1200.0},
         {"name": "Grey Goose Vodka", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 2500.0},
+        {"name": "Bombay Gin", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 900.0},
+        {"name": "Captain Morgan Spiced Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 750.0},
+        {"name": "Jagermeister", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 1100.0},
+        {"name": "Jose Cuervo Gold Tequila", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
+        {"name": "Skyy Vodka", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 650.0},
         
         # Mixers
-        {"name": "Big Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 22.0, "cost_per_case": 250.0},
-        {"name": "Big Sprite", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 22.0, "cost_per_case": 250.0},
-        {"name": "Soda Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 40, "max_stock": 150, "primary_supplier": "Singha99", "cost_per_unit": 18.0, "cost_per_case": 400.0},
-        {"name": "Tonic Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 30, "max_stock": 100, "primary_supplier": "Singha99", "cost_per_unit": 25.0, "cost_per_case": 580.0},
-        {"name": "Red Bull", "category": "M", "category_name": "Mixers", "units_per_case": 50, "min_stock": 100, "max_stock": 400, "primary_supplier": "Singha99", "cost_per_unit": 15.0, "cost_per_case": 720.0},
-        {"name": "Orange Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 10, "max_stock": 40, "primary_supplier": "Singha99", "cost_per_unit": 55.0},
+        {"name": "Big Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0},
+        {"name": "Big Sprite", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0},
+        {"name": "Soda Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Tonic Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Schweppes Lime", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Schweppes Ginger Ale", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Fanta Orange", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Red Bull", "category": "M", "category_name": "Mixers", "units_per_case": 50, "min_stock": 100, "max_stock": 300, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 200.0},
+        {"name": "Small Water (600ml)", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 66.0},
+        {"name": "Big Water (1.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 6, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 33.0},
+        {"name": "Orange Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 55.0},
+        {"name": "Cranberry Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Singha99", "cost_per_unit": 65.0},
         
-        # Other Bar Supplies  
-        {"name": "Limes (bag)", "category": "O", "category_name": "Other Bar", "units_per_case": 1, "min_stock": 5, "max_stock": 20, "primary_supplier": "Local Market", "cost_per_unit": 40.0},
-        {"name": "Plastic Cups", "category": "O", "category_name": "Other Bar", "units_per_case": 100, "min_stock": 200, "max_stock": 1000, "primary_supplier": "Makro", "cost_per_unit": 1.2, "cost_per_case": 120.0},
-        {"name": "Straws", "category": "O", "category_name": "Other Bar", "units_per_case": 500, "min_stock": 1000, "max_stock": 5000, "primary_supplier": "Makro", "cost_per_unit": 0.17, "cost_per_case": 85.0},
+        # Bar Supplies
+        {"name": "Buckets", "category": "O", "category_name": "Bar Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 10, "primary_supplier": "Makro", "cost_per_unit": 59.0},
+        {"name": "Limes (25 pack)", "category": "O", "category_name": "Bar Supplies", "units_per_case": 25, "min_stock": 50, "max_stock": 200, "primary_supplier": "Makro", "cost_per_unit": 0.4, "cost_per_case": 10.0},
+        {"name": "Plastic Cups (16oz)", "category": "O", "category_name": "Bar Supplies", "units_per_case": 50, "min_stock": 100, "max_stock": 500, "primary_supplier": "Makro", "cost_per_unit": 2.18, "cost_per_case": 109.0},
+        {"name": "Paper Cups (16oz)", "category": "O", "category_name": "Bar Supplies", "units_per_case": 50, "min_stock": 100, "max_stock": 500, "primary_supplier": "Makro", "cost_per_unit": 1.58, "cost_per_case": 79.0},
+        {"name": "Straws", "category": "O", "category_name": "Bar Supplies", "units_per_case": 100, "min_stock": 200, "max_stock": 1000, "primary_supplier": "Makro", "cost_per_unit": 0.68, "cost_per_case": 68.0},
         
-        # Makro items
-        {"name": "Vodka (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 180.0, "cost_per_case": 2000.0},
-        {"name": "Gin (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 180.0, "cost_per_case": 2000.0},
+        # Housekeeping Supplies 
+        {"name": "Toilet Paper (Jumbo Roll)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 4, "min_stock": 8, "max_stock": 32, "primary_supplier": "Makro", "cost_per_unit": 45.0, "cost_per_case": 180.0},
+        {"name": "Trash Bags Small (24x28)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 5, "min_stock": 10, "max_stock": 50, "primary_supplier": "Makro", "cost_per_unit": 15.0, "cost_per_case": 75.0},
+        {"name": "Hand Soap", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 35.0},
+        {"name": "Floor Cleaner", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 4, "min_stock": 4, "max_stock": 16, "primary_supplier": "Makro", "cost_per_unit": 28.0, "cost_per_case": 112.0},
     ]
     
     # Insert real items
