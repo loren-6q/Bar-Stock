@@ -2,6 +2,7 @@ import requests
 import sys
 import json
 from datetime import datetime
+import time
 
 class BarStockAPITester:
     def __init__(self, base_url="https://stocktrackr-1.preview.emergentagent.com"):
@@ -10,6 +11,10 @@ class BarStockAPITester:
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
+        self.test_session_id = None
+        self.test_session2_id = None
+        self.test_item_ids = []
+        self.test_purchase_ids = []
 
     def log_test(self, name, success, details=""):
         """Log test result"""
