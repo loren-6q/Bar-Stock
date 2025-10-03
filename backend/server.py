@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import math
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -36,6 +37,7 @@ class Item(BaseModel):
     primary_supplier: str
     secondary_supplier: Optional[str] = None
     cost_per_unit: float = 0.0
+    cost_per_case: float = 0.0
     is_case_pricing: bool = False
 
 class ItemCreate(BaseModel):
@@ -48,6 +50,7 @@ class ItemCreate(BaseModel):
     primary_supplier: str
     secondary_supplier: Optional[str] = None
     cost_per_unit: float = 0.0
+    cost_per_case: float = 0.0
     is_case_pricing: bool = False
 
 class StockCount(BaseModel):
@@ -75,23 +78,55 @@ class StockCountUpdate(BaseModel):
     lobby: Optional[int] = None
     storage_room: Optional[int] = None
 
+class CaseCalculation(BaseModel):
+    total_units: int
+    cases_needed: int
+    extra_units: int
+    cases_to_buy: int
+    display_text: str
+
 class ShoppingListItem(BaseModel):
     item_name: str
     item_id: str
     current_stock: int
     min_stock: int
     max_stock: int
-    need_to_buy: int
+    need_to_buy_units: int
+    case_calculation: CaseCalculation
     supplier: str
     cost_per_unit: float
+    cost_per_case: float
     estimated_cost: float
 
-class StockSession(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    session_name: str
-    session_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    is_active: bool = True
-    session_type: str = "full_count"  # full_count or quick_restock
+# Helper function to calculate cases
+def calculate_cases(units_needed: int, units_per_case: int) -> CaseCalculation:
+    if units_per_case <= 1:
+        return CaseCalculation(
+            total_units=units_needed,
+            cases_needed=0,
+            extra_units=units_needed,
+            cases_to_buy=0,
+            display_text=f"{units_needed} units"
+        )
+    
+    full_cases = units_needed // units_per_case
+    extra_units = units_needed % units_per_case
+    
+    # Round up to full case if there are extra units
+    cases_to_buy = full_cases + (1 if extra_units > 0 else 0)
+    
+    if extra_units == 0:
+        display_text = f"{full_cases} cases ({full_cases * units_per_case} units)"
+    else:
+        display_text = f"{cases_to_buy} cases ({full_cases} full + {extra_units} extra = {cases_to_buy * units_per_case} units)"
+    
+    return CaseCalculation(
+        total_units=units_needed,
+        cases_needed=full_cases,
+        extra_units=extra_units,
+        cases_to_buy=cases_to_buy,
+        display_text=display_text
+    )
 
 # Helper function to prepare data for MongoDB
 def prepare_for_mongo(data):
@@ -112,6 +147,10 @@ def parse_from_mongo(item):
 @api_router.post("/items", response_model=Item)
 async def create_item(item: ItemCreate):
     item_dict = item.dict()
+    # Calculate cost per case if not provided
+    if item_dict['cost_per_case'] == 0 and item_dict['cost_per_unit'] > 0:
+        item_dict['cost_per_case'] = item_dict['cost_per_unit'] * item_dict['units_per_case']
+    
     item_obj = Item(**item_dict)
     result = await db.items.insert_one(prepare_for_mongo(item_obj.dict()))
     return item_obj
@@ -130,9 +169,14 @@ async def get_item(item_id: str):
 
 @api_router.put("/items/{item_id}", response_model=Item)
 async def update_item(item_id: str, item_update: ItemCreate):
+    update_dict = item_update.dict()
+    # Recalculate cost per case
+    if update_dict['cost_per_case'] == 0 and update_dict['cost_per_unit'] > 0:
+        update_dict['cost_per_case'] = update_dict['cost_per_unit'] * update_dict['units_per_case']
+    
     result = await db.items.update_one(
         {"id": item_id}, 
-        {"$set": item_update.dict()}
+        {"$set": update_dict}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -180,36 +224,37 @@ async def update_stock_count(item_id: str, count_update: StockCountUpdate):
     existing_count = await db.stock_counts.find_one({"item_id": item_id})
     
     if existing_count:
-        update_data = {}
-        total = 0
-        
         # Update only provided fields
+        update_data = existing_count.copy()
         for field, value in count_update.dict().items():
             if value is not None:
                 update_data[field] = value
         
-        # Get current values for total calculation
-        current_count = StockCount(**parse_from_mongo(existing_count))
-        updated_count = current_count.copy(update=update_data)
-        updated_count.total_count = updated_count.main_bar + updated_count.beer_bar + updated_count.lobby + updated_count.storage_room
+        # Recalculate total
+        update_data['total_count'] = update_data['main_bar'] + update_data['beer_bar'] + update_data['lobby'] + update_data['storage_room']
+        update_data['count_date'] = datetime.now(timezone.utc)
         
         result = await db.stock_counts.update_one(
             {"item_id": item_id},
-            {"$set": prepare_for_mongo(updated_count.dict())}
+            {"$set": prepare_for_mongo(update_data)}
         )
-        return updated_count
+        return StockCount(**parse_from_mongo(update_data))
     else:
         # Create new count
         count_dict = {"item_id": item_id}
-        count_dict.update(count_update.dict())
-        total = sum([v for v in count_dict.values() if isinstance(v, int)])
-        count_dict['total_count'] = total
+        for field, value in count_update.dict().items():
+            if value is not None:
+                count_dict[field] = value
+            else:
+                count_dict[field] = 0
+                
+        count_dict['total_count'] = count_dict['main_bar'] + count_dict['beer_bar'] + count_dict['lobby'] + count_dict['storage_room']
         
         count_obj = StockCount(**count_dict)
         await db.stock_counts.insert_one(prepare_for_mongo(count_obj.dict()))
         return count_obj
 
-# Shopping list endpoint
+# Shopping list endpoint with case logic
 @api_router.get("/shopping-list")
 async def get_shopping_list():
     # Get all items
@@ -237,21 +282,62 @@ async def get_shopping_list():
             if supplier not in shopping_list:
                 shopping_list[supplier] = []
             
+            # Calculate case logic
+            case_calc = calculate_cases(need_to_buy, item_obj.units_per_case)
+            
+            # Calculate cost (prefer case pricing if available and buying full cases)
+            if item_obj.cost_per_case > 0 and case_calc.cases_to_buy > 0:
+                estimated_cost = case_calc.cases_to_buy * item_obj.cost_per_case
+            else:
+                estimated_cost = need_to_buy * item_obj.cost_per_unit
+            
             shopping_item = ShoppingListItem(
                 item_name=item_obj.name,
                 item_id=item_obj.id,
                 current_stock=current_stock,
                 min_stock=item_obj.min_stock,
                 max_stock=item_obj.max_stock,
-                need_to_buy=need_to_buy,
+                need_to_buy_units=need_to_buy,
+                case_calculation=case_calc,
                 supplier=supplier,
                 cost_per_unit=item_obj.cost_per_unit,
-                estimated_cost=need_to_buy * item_obj.cost_per_unit
+                cost_per_case=item_obj.cost_per_case,
+                estimated_cost=estimated_cost
             )
             
             shopping_list[supplier].append(shopping_item.dict())
     
     return shopping_list
+
+# Plain text shopping list for messaging (especially Singha99)
+@api_router.get("/shopping-list-text/{supplier}")
+async def get_shopping_list_text(supplier: str):
+    shopping_data = await get_shopping_list()
+    
+    if supplier not in shopping_data:
+        return {"text": f"No items needed from {supplier}"}
+    
+    items = shopping_data[supplier]
+    
+    # Create plain text format
+    text_lines = [f"Order for {supplier}:", ""]
+    total_cost = 0
+    
+    for item in items:
+        case_calc = item['case_calculation']
+        name = item['item_name']
+        cost = item['estimated_cost']
+        total_cost += cost
+        
+        if case_calc['cases_to_buy'] > 0:
+            text_lines.append(f"• {name}: {case_calc['display_text']} - ฿{cost:.2f}")
+        else:
+            text_lines.append(f"• {name}: {item['need_to_buy_units']} units - ฿{cost:.2f}")
+    
+    text_lines.append("")
+    text_lines.append(f"Total: ฿{total_cost:.2f}")
+    
+    return {"text": "\n".join(text_lines), "total_cost": total_cost}
 
 # Quick restock check
 @api_router.get("/quick-restock")
@@ -283,33 +369,59 @@ async def get_quick_restock():
     
     return low_stock_items
 
-# Initialize with sample data
-@api_router.post("/initialize-sample-data")
-async def initialize_sample_data():
+# Initialize with real data from spreadsheet
+@api_router.post("/initialize-real-data")
+async def initialize_real_data():
     # Clear existing data
     await db.items.delete_many({})
     await db.stock_counts.delete_many({})
     
-    # Sample items based on the spreadsheet
-    sample_items = [
-        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 50, "max_stock": 200, "primary_supplier": "Makro", "cost_per_unit": 35.0},
-        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 30, "max_stock": 120, "primary_supplier": "Makro", "cost_per_unit": 25.0},
-        {"name": "Singha Beer", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 40, "max_stock": 150, "primary_supplier": "Singha99", "cost_per_unit": 38.0},
-        {"name": "Thai Whiskey", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 6, "min_stock": 10, "max_stock": 50, "primary_supplier": "Singha99", "cost_per_unit": 450.0},
-        {"name": "Vodka", "category": "A", "category_name": "Import Alcohol", "units_per_case": 6, "min_stock": 8, "max_stock": 30, "primary_supplier": "Makro", "cost_per_unit": 800.0},
-        {"name": "Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 50, "max_stock": 200, "primary_supplier": "Makro", "cost_per_unit": 18.0},
-        {"name": "Orange Juice", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 20, "max_stock": 80, "primary_supplier": "Makro", "cost_per_unit": 25.0},
+    # Real items based on the spreadsheet with proper case calculations
+    real_items = [
+        # Beers (most common items)
+        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 50, "max_stock": 200, "primary_supplier": "Singha99", "cost_per_unit": 32.0, "cost_per_case": 750.0},
+        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 50, "max_stock": 200, "primary_supplier": "Singha99", "cost_per_unit": 28.0, "cost_per_case": 650.0},
+        {"name": "Big Leo", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 35.0, "cost_per_case": 400.0},
+        {"name": "Small Leo", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 30.0, "cost_per_case": 700.0},
+        {"name": "Big Singha", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 38.0, "cost_per_case": 440.0},
+        {"name": "Small Singha", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 32.0, "cost_per_case": 750.0},
+        {"name": "Small Heineken", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 20, "max_stock": 80, "primary_supplier": "Singha99", "cost_per_unit": 42.0, "cost_per_case": 980.0},
+        
+        # Thai Alcohol
+        {"name": "Sangsom (Black)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 8, "max_stock": 30, "primary_supplier": "Singha99", "cost_per_unit": 220.0, "cost_per_case": 2500.0},
+        {"name": "Hong Thong", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 8, "max_stock": 30, "primary_supplier": "Singha99", "cost_per_unit": 190.0, "cost_per_case": 2200.0},
+        {"name": "Thai Tequila", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 4, "max_stock": 15, "primary_supplier": "Singha99", "cost_per_unit": 280.0},
+        {"name": "Fox (Jagermeister)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Singha99", "cost_per_unit": 320.0},
+        
+        # Import Alcohol (by bottle)
+        {"name": "Jack Daniels", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "zBKK", "cost_per_unit": 1200.0},
+        {"name": "Bacardi Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
+        {"name": "Grey Goose Vodka", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 2500.0},
+        
+        # Mixers
+        {"name": "Big Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 22.0, "cost_per_case": 250.0},
+        {"name": "Big Sprite", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 22.0, "cost_per_case": 250.0},
+        {"name": "Soda Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 40, "max_stock": 150, "primary_supplier": "Singha99", "cost_per_unit": 18.0, "cost_per_case": 400.0},
+        {"name": "Tonic Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 30, "max_stock": 100, "primary_supplier": "Singha99", "cost_per_unit": 25.0, "cost_per_case": 580.0},
+        {"name": "Red Bull", "category": "M", "category_name": "Mixers", "units_per_case": 50, "min_stock": 100, "max_stock": 400, "primary_supplier": "Singha99", "cost_per_unit": 15.0, "cost_per_case": 720.0},
+        {"name": "Orange Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 10, "max_stock": 40, "primary_supplier": "Singha99", "cost_per_unit": 55.0},
+        
+        # Other Bar Supplies  
         {"name": "Limes (bag)", "category": "O", "category_name": "Other Bar", "units_per_case": 1, "min_stock": 5, "max_stock": 20, "primary_supplier": "Local Market", "cost_per_unit": 40.0},
-        {"name": "Plastic Cups", "category": "O", "category_name": "Other Bar", "units_per_case": 100, "min_stock": 200, "max_stock": 1000, "primary_supplier": "Makro", "cost_per_unit": 120.0},
-        {"name": "Straws", "category": "O", "category_name": "Other Bar", "units_per_case": 500, "min_stock": 1000, "max_stock": 5000, "primary_supplier": "Makro", "cost_per_unit": 85.0},
+        {"name": "Plastic Cups", "category": "O", "category_name": "Other Bar", "units_per_case": 100, "min_stock": 200, "max_stock": 1000, "primary_supplier": "Makro", "cost_per_unit": 1.2, "cost_per_case": 120.0},
+        {"name": "Straws", "category": "O", "category_name": "Other Bar", "units_per_case": 500, "min_stock": 1000, "max_stock": 5000, "primary_supplier": "Makro", "cost_per_unit": 0.17, "cost_per_case": 85.0},
+        
+        # Makro items
+        {"name": "Vodka (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 180.0, "cost_per_case": 2000.0},
+        {"name": "Gin (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 180.0, "cost_per_case": 2000.0},
     ]
     
-    # Insert sample items
-    for item_data in sample_items:
+    # Insert real items
+    for item_data in real_items:
         item = Item(**item_data)
         await db.items.insert_one(prepare_for_mongo(item.dict()))
     
-    return {"message": "Sample data initialized successfully"}
+    return {"message": "Real data initialized successfully", "items_count": len(real_items)}
 
 # Include the router in the main app
 app.include_router(api_router)
