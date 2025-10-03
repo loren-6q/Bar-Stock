@@ -309,6 +309,11 @@ function StockCounter() {
   const [copyText, setCopyText] = useState('');
   const [copySupplier, setCopySupplier] = useState('');
   const [currentSession, setCurrentSession] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [selectedSessions, setSelectedSessions] = useState({ session1: '', session2: '' });
+  const [usageReport, setUsageReport] = useState(null);
+  const [purchases, setPurchases] = useState([]);
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
