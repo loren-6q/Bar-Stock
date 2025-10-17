@@ -634,12 +634,12 @@ async def initialize_real_data():
         {"name": "Bam Bam (can)", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 14.0, "cost_per_case": 168.0, "bought_by_case": True},
         {"name": "Soju", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 0.75, "cost_per_case": 9.0, "bought_by_case": True},
         
-        # Thai Alcohol 
-        {"name": "Charles House Rum", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 24.0, "cost_per_case": 288.0},
-        {"name": "Charles House Gin", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 23.0, "cost_per_case": 276.0},
-        {"name": "Yeow Ngeah Vodka", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Vendor", "cost_per_unit": 15.0, "cost_per_case": 180.0},
-        {"name": "Sangsom (Black)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0},
-        {"name": "Hong Thong", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 48.0},
+        # Thai Alcohol - commonly bought by case/box
+        {"name": "Charles House Rum", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 24.0, "cost_per_case": 288.0, "bought_by_case": True},
+        {"name": "Charles House Gin", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 23.0, "cost_per_case": 276.0, "bought_by_case": True},
+        {"name": "Yeow Ngeah Vodka", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Vendor", "cost_per_unit": 15.0, "cost_per_case": 180.0, "bought_by_case": True},
+        {"name": "Sangsom (Black)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0, "bought_by_case": True},
+        {"name": "Hong Thong", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 48.0, "bought_by_case": True},
         
         # Import Alcohol (premium by bottle)
         {"name": "Bacardi Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
