@@ -39,6 +39,7 @@ class Item(BaseModel):
     cost_per_unit: float = 0.0
     cost_per_case: float = 0.0
     is_case_pricing: bool = False
+    bought_by_case: bool = False  # New field: whether this item is commonly bought by case
 
 class ItemCreate(BaseModel):
     name: str
