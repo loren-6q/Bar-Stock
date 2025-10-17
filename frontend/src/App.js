@@ -280,6 +280,20 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
               />
             </div>
           </div>
+          
+          {/* Case purchasing checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="bought_by_case"
+              checked={formData.bought_by_case}
+              onChange={(e) => setFormData({...formData, bought_by_case: e.target.checked})}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <Label htmlFor="bought_by_case" className="text-sm">
+              Commonly bought by case (enables case + single input mode for stock counting)
+            </Label>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">
