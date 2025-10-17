@@ -882,6 +882,15 @@ function StockCounter() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => createOrderFromShoppingList(supplier)}
+                            className="text-white hover:bg-white/20 h-6 px-2 text-xs"
+                            data-testid={`order-${supplier}`}
+                          >
+                            Order
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => showCopyDialog(supplier)}
                             className="text-white hover:bg-white/20 h-7 w-7 p-0"
                             data-testid={`copy-${supplier}`}
