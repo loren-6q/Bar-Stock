@@ -53,6 +53,7 @@ class ItemCreate(BaseModel):
     cost_per_unit: float = 0.0
     cost_per_case: float = 0.0
     is_case_pricing: bool = False
+    bought_by_case: bool = False  # New field: whether this item is commonly bought by case
 
 class StockCount(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
