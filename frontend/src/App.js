@@ -742,6 +742,16 @@ function StockCounter() {
                               {item.units_per_case}/case
                             </Badge>
                           )}
+                          {item.units_per_case > 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCaseInput(item.id)}
+                              className="text-xs h-6 px-2"
+                            >
+                              {showCaseInputs[item.id] ? 'Simple' : 'Case+Single'}
+                            </Button>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
