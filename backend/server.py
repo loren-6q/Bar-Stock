@@ -651,17 +651,17 @@ async def initialize_real_data():
         {"name": "Jose Cuervo Gold Tequila", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 850.0},
         {"name": "Skyy Vodka", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 650.0},
         
-        # Mixers
-        {"name": "Big Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0},
-        {"name": "Big Sprite", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0},
-        {"name": "Soda Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
-        {"name": "Tonic Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
-        {"name": "Schweppes Lime", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
-        {"name": "Schweppes Ginger Ale", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
-        {"name": "Fanta Orange", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
-        {"name": "Red Bull", "category": "M", "category_name": "Mixers", "units_per_case": 50, "min_stock": 100, "max_stock": 300, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 200.0},
-        {"name": "Small Water (600ml)", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 66.0},
-        {"name": "Big Water (1.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 6, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 33.0},
+        # Mixers - case items marked as commonly bought by case
+        {"name": "Big Coke", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0, "bought_by_case": True},
+        {"name": "Big Sprite", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 12.0, "cost_per_case": 144.0, "bought_by_case": True},
+        {"name": "Soda Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
+        {"name": "Tonic Water", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 48, "max_stock": 144, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
+        {"name": "Schweppes Lime", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
+        {"name": "Schweppes Ginger Ale", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
+        {"name": "Fanta Orange", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
+        {"name": "Red Bull", "category": "M", "category_name": "Mixers", "units_per_case": 50, "min_stock": 100, "max_stock": 300, "primary_supplier": "Singha99", "cost_per_unit": 4.0, "cost_per_case": 200.0, "bought_by_case": True},
+        {"name": "Small Water (600ml)", "category": "M", "category_name": "Mixers", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 66.0, "bought_by_case": True},
+        {"name": "Big Water (1.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 6, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 5.5, "cost_per_case": 33.0, "bought_by_case": True},
         {"name": "Orange Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 55.0},
         {"name": "Cranberry Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Singha99", "cost_per_unit": 65.0},
         
