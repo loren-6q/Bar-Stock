@@ -134,7 +134,8 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
     max_stock: 0,
     primary_supplier: 'Singha99',
     cost_per_unit: 0,
-    cost_per_case: 0
+    cost_per_case: 0,
+    bought_by_case: false
   });
 
   useEffect(() => {
