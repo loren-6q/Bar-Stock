@@ -532,7 +532,32 @@ async def get_current_session():
         return StockSession(**parse_from_mongo(session))
     return None
 
-# Purchase management endpoints
+# Order confirmation workflow endpoints
+@api_router.post("/shopping-orders", response_model=ShoppingListOrder)
+async def create_shopping_order(order: ShoppingListOrderCreate):
+    order_obj = ShoppingListOrder(**order.dict())
+    await db.shopping_orders.insert_one(prepare_for_mongo(order_obj.dict()))
+    return order_obj
+
+@api_router.get("/shopping-orders", response_model=List[ShoppingListOrder])
+async def get_shopping_orders(status: Optional[str] = None):
+    filter_query = {"status": status} if status else {}
+    orders = await db.shopping_orders.find(filter_query).sort("order_date", -1).to_list(100)
+    return [ShoppingListOrder(**parse_from_mongo(order)) for order in orders]
+
+@api_router.put("/shopping-orders/{order_id}/status")
+async def update_order_status(order_id: str, status: str, notes: Optional[str] = None):
+    update_data = {"status": status}
+    if notes:
+        update_data["notes"] = notes
+    
+    result = await db.shopping_orders.update_one({"id": order_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": f"Order status updated to {status}"}
+
+# Enhanced purchase management endpoints
 @api_router.post("/purchases", response_model=PurchaseEntry)
 async def create_purchase_entry(purchase: PurchaseEntryCreate):
     purchase_obj = PurchaseEntry(**purchase.dict())
