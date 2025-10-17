@@ -314,6 +314,8 @@ function StockCounter() {
   const [usageReport, setUsageReport] = useState(null);
   const [purchases, setPurchases] = useState([]);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+  const [enhancedCounts, setEnhancedCounts] = useState({}); // For case/single inputs
+  const [showCaseInputs, setShowCaseInputs] = useState({}); // Which items to show case inputs for
   const { toast } = useToast();
 
   useEffect(() => {
