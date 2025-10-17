@@ -557,6 +557,36 @@ async def update_order_status(order_id: str, status: str, notes: Optional[str] =
     
     return {"message": f"Order status updated to {status}"}
 
+@api_router.post("/shopping-list/create-order/{supplier}")
+async def create_order_from_shopping_list(supplier: str, notes: Optional[str] = None):
+    # Get current shopping list
+    shopping_list = await get_shopping_list_by_supplier()
+    
+    if supplier not in shopping_list:
+        raise HTTPException(status_code=404, detail=f"No items found for supplier {supplier}")
+    
+    supplier_items = shopping_list[supplier]
+    planned_items = []
+    
+    for item in supplier_items['items']:
+        planned_items.append({
+            "item_id": item['item_id'],
+            "item_name": item['item_name'],
+            "current_stock": item['current_stock'],
+            "max_stock": item['max_stock'],
+            "need_to_buy": item['need_to_buy'],
+            "case_calculation": item['case_calculation'],
+            "estimated_cost": item['estimated_cost']
+        })
+    
+    order_data = ShoppingListOrderCreate(
+        supplier=supplier,
+        planned_items=planned_items,
+        notes=notes or f"Auto-generated from shopping list on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}"
+    )
+    
+    return await create_shopping_order(order_data)
+
 # Enhanced purchase management endpoints
 @api_router.post("/purchases", response_model=PurchaseEntry)
 async def create_purchase_entry(purchase: PurchaseEntryCreate):
