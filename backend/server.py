@@ -670,11 +670,52 @@ async def initialize_real_data():
         {"name": "Paper Cups (16oz)", "category": "O", "category_name": "Bar Supplies", "units_per_case": 50, "min_stock": 100, "max_stock": 500, "primary_supplier": "Makro", "cost_per_unit": 1.58, "cost_per_case": 79.0},
         {"name": "Straws", "category": "O", "category_name": "Bar Supplies", "units_per_case": 100, "min_stock": 200, "max_stock": 1000, "primary_supplier": "Makro", "cost_per_unit": 0.68, "cost_per_case": 68.0},
         
-        # Housekeeping Supplies 
+        # Missing Import Alcohol (Premium Spirits)
+        {"name": "Fireball", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 1050.0},
+        {"name": "Jack Daniels Honey", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 1300.0},
+        {"name": "Jameson", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 1400.0},
+        {"name": "Jose Cuervo Silver Tequila", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 900.0},
+        {"name": "Malibu", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 800.0},
+        {"name": "Bacardi Black Rum", "category": "A", "category_name": "Import Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "zBKK", "cost_per_unit": 900.0},
+        
+        # Missing Thai Alcohol & Liqueurs
+        {"name": "Thai Tequila (Matador)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Singha99", "cost_per_unit": 280.0},
+        {"name": "Thai Malibu (Coconut Liquor)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Singha99", "cost_per_unit": 250.0},
+        {"name": "Fox (Jagermeister)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Singha99", "cost_per_unit": 320.0},
+        {"name": "Dark Rum (Phoenix)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Singha99", "cost_per_unit": 200.0},
+        {"name": "Triplesec (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "Singha99", "cost_per_unit": 180.0},
+        {"name": "Blue Curacao (Charles House)", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "Singha99", "cost_per_unit": 200.0},
+        {"name": "Sambuca", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Singha99", "cost_per_unit": 450.0},
+        {"name": "Peach Schnapps", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "Singha99", "cost_per_unit": 220.0},
+        
+        # Missing Mixers & Concentrates
+        {"name": "Fanta Strawberry", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Blue Concentrate", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 150.0},
+        {"name": "Orange Concentrate (45L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 800.0},
+        {"name": "Pineapple Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 65.0},
+        {"name": "Pineapple Concentrate (11.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 450.0},
+        {"name": "Mango Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 70.0},
+        {"name": "Mango Concentrate (11.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 480.0},
+        {"name": "Strawberry Concentrate (11.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 460.0},
+        {"name": "Passionfruit Concentrate (11.5L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 500.0},
+        {"name": "Lime Juice", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 45.0},
+        {"name": "Grenadine", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 85.0},
+        
+        # Complete Housekeeping & Supplies
         {"name": "Toilet Paper (Jumbo Roll)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 4, "min_stock": 8, "max_stock": 32, "primary_supplier": "Makro", "cost_per_unit": 45.0, "cost_per_case": 180.0},
+        {"name": "Toilet Paper (Small Roll)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Makro", "cost_per_unit": 5.0, "cost_per_case": 120.0},
         {"name": "Trash Bags Small (24x28)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 5, "min_stock": 10, "max_stock": 50, "primary_supplier": "Makro", "cost_per_unit": 15.0, "cost_per_case": 75.0},
+        {"name": "Trash Bags Big (30x40)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 5, "min_stock": 10, "max_stock": 40, "primary_supplier": "Makro", "cost_per_unit": 25.0, "cost_per_case": 125.0},
+        {"name": "Floor Cleaner (Concentrate)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 4, "min_stock": 4, "max_stock": 16, "primary_supplier": "Makro", "cost_per_unit": 28.0, "cost_per_case": 112.0},
+        {"name": "Toilet Cleaner", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 35.0},
+        {"name": "Bleach", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 25.0},
+        {"name": "Laundry Washing Powder (25kg)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 350.0},
+        {"name": "Laundry Softener (20L)", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 180.0},
         {"name": "Hand Soap", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 35.0},
-        {"name": "Floor Cleaner", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 4, "min_stock": 4, "max_stock": 16, "primary_supplier": "Makro", "cost_per_unit": 28.0, "cost_per_case": 112.0},
+        {"name": "Body Soap", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 40.0},
+        {"name": "Shampoo", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 65.0},
+        {"name": "Air Freshener Spray", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 45.0},
+        {"name": "Dish Soap", "category": "Z", "category_name": "Hostel Supplies", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 30.0},
     ]
     
     # Insert real items
