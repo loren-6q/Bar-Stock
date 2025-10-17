@@ -774,15 +774,44 @@ function StockCounter() {
                               <span>{location.icon}</span>
                               {location.label}
                             </label>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={count[location.key] || ''}
-                              onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                              className="text-center font-medium h-7 text-sm"
-                              placeholder="0"
-                              data-testid={`count-input-${item.id}-${location.key}`}
-                            />
+                            
+                            {/* Enhanced Case+Single Input Mode */}
+                            {item.bought_by_case && showCaseInputs[item.id] ? (
+                              <div className="space-y-1">
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
+                                    onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
+                                    className="text-center font-medium h-6 text-xs w-1/2"
+                                    placeholder="0"
+                                  />
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
+                                    onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
+                                    className="text-center font-medium h-6 text-xs w-1/2"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div className="text-xs text-gray-500 text-center">
+                                  Cases + Singles
+                                </div>
+                              </div>
+                            ) : (
+                              /* Regular Single Input Mode */
+                              <Input
+                                type="number"
+                                min="0"
+                                value={count[location.key] || ''}
+                                onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
+                                className="text-center font-medium h-7 text-sm"
+                                placeholder="0"
+                                data-testid={`count-input-${item.id}-${location.key}`}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
