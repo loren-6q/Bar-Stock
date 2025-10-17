@@ -461,6 +461,48 @@ function StockCounter() {
     setPurchaseDialogOpen(true);
   };
 
+  // Order confirmation workflow functions
+  const createOrderFromShoppingList = async (supplier) => {
+    try {
+      const response = await axios.post(`${API}/shopping-list/create-order/${supplier}`, {
+        notes: `Order created for ${supplier} on ${new Date().toLocaleDateString()}`
+      });
+      
+      toast({
+        title: "Order Created!",
+        description: `Order for ${supplier} has been created and marked as pending`,
+      });
+      
+      // Refresh any order lists if needed
+      return response.data;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "Error creating order",
+        description: "Could not create order from shopping list",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateOrderStatus = async (orderId, status, notes = '') => {
+    try {
+      await axios.put(`${API}/shopping-orders/${orderId}/status?status=${status}&notes=${notes}`);
+      
+      toast({
+        title: "Order Updated",
+        description: `Order status changed to ${status}`,
+      });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast({
+        title: "Error updating order",
+        description: "Could not update order status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateStockCount = async (itemId, location, value) => {
     try {
       const updateData = {};
