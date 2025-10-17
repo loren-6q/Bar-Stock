@@ -691,7 +691,7 @@ async def initialize_real_data():
         {"name": "Peach Schnapps", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 1, "min_stock": 1, "max_stock": 6, "primary_supplier": "Singha99", "cost_per_unit": 220.0},
         
         # Missing Mixers & Concentrates
-        {"name": "Fanta Strawberry", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0},
+        {"name": "Fanta Strawberry", "category": "M", "category_name": "Mixers", "units_per_case": 24, "min_stock": 12, "max_stock": 48, "primary_supplier": "Singha99", "cost_per_unit": 10.0, "cost_per_case": 240.0, "bought_by_case": True},
         {"name": "Blue Concentrate", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 2, "max_stock": 8, "primary_supplier": "Makro", "cost_per_unit": 150.0},
         {"name": "Orange Concentrate (45L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 1, "max_stock": 4, "primary_supplier": "Makro", "cost_per_unit": 800.0},
         {"name": "Pineapple Juice (1L)", "category": "M", "category_name": "Mixers", "units_per_case": 1, "min_stock": 3, "max_stock": 12, "primary_supplier": "Makro", "cost_per_unit": 65.0},
