@@ -165,6 +165,42 @@ backend:
       - agent: "testing"
       - comment: "✅ TESTED: Full CRUD operations working - POST /api/purchases (create), GET /api/purchases/session/{session_id} (read), PUT /api/purchases/{purchase_id} (update), DELETE /api/purchases/{purchase_id} (delete). Tracks planned vs actual quantities perfectly. Integrates with usage calculation."
 
+  - task: "Enhanced case/single input API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: POST /api/stock-counts-enhanced/{item_id} working perfectly. Accepts separate cases and singles input for each location, accurately calculates totals using formula: (cases × units_per_case) + singles. Tested with Big Chang (15 units/case): 2 cases + 5 singles = 35 units. All location calculations verified correct."
+
+  - task: "Order confirmation workflow"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: Complete order workflow operational. POST /api/shopping-orders creates orders from shopping lists, PUT /api/shopping-orders/{id}/status updates order status (pending→ordered→received→confirmed), GET /api/shopping-orders retrieves all orders. Order tracking and status management fully functional."
+
+  - task: "Complete enhanced workflow integration"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "testing"
+      - comment: "✅ TESTED: End-to-end enhanced workflow verified. Stock Session Creation → Enhanced Case+Single Stock Counting → Save Counts to Session → Shopping List Generation → Order Creation → Purchase Confirmation → Usage Analysis. All components integrate seamlessly. Complex usage tracking formula (opening + purchases - closing = usage) working correctly with cost calculations."
+
   - task: "Complete data import from spreadsheet"
     implemented: true
     working: true
