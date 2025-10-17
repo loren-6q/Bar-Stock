@@ -80,6 +80,18 @@ class StockCountUpdate(BaseModel):
     lobby: Optional[int] = None
     storage_room: Optional[int] = None
 
+# New models for case/single input support
+class LocationStockInput(BaseModel):
+    singles: int = 0  # Individual units (cans, bottles, etc.)
+    cases: int = 0    # Full cases/boxes
+
+class StockCountInputs(BaseModel):
+    main_bar: LocationStockInput = Field(default_factory=LocationStockInput)
+    beer_bar: LocationStockInput = Field(default_factory=LocationStockInput)
+    lobby: LocationStockInput = Field(default_factory=LocationStockInput)
+    storage_room: LocationStockInput = Field(default_factory=LocationStockInput)
+    counted_by: str = "Staff"
+
 class CaseCalculation(BaseModel):
     total_units: int
     cases_needed: int
