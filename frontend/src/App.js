@@ -482,6 +482,71 @@ function StockCounter() {
     }
   };
 
+  const updateEnhancedStockCount = async (itemId, location, type, value) => {
+    const numValue = parseInt(value) || 0;
+    
+    // Update local enhanced counts state
+    setEnhancedCounts(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [location]: {
+          ...prev[itemId]?.[location],
+          [type]: numValue // type is 'cases' or 'singles'
+        }
+      }
+    }));
+
+    // Calculate and send to backend if we have complete data for this item
+    const itemCounts = enhancedCounts[itemId] || {};
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    try {
+      // Build the stock inputs object
+      const stockInputs = {
+        main_bar: { 
+          cases: itemCounts.main_bar?.cases || 0, 
+          singles: itemCounts.main_bar?.singles || 0 
+        },
+        beer_bar: { 
+          cases: itemCounts.beer_bar?.cases || 0, 
+          singles: itemCounts.beer_bar?.singles || 0 
+        },
+        lobby: { 
+          cases: itemCounts.lobby?.cases || 0, 
+          singles: itemCounts.lobby?.singles || 0 
+        },
+        storage_room: { 
+          cases: itemCounts.storage_room?.cases || 0, 
+          singles: itemCounts.storage_room?.singles || 0 
+        },
+        counted_by: "Staff"
+      };
+
+      // Update the current location with the new value
+      stockInputs[location][type] = numValue;
+
+      const response = await axios.post(`${API}/stock-counts-enhanced/${itemId}`, stockInputs);
+      
+      // Update the regular stock counts display with calculated totals
+      setStockCounts(prev => ({
+        ...prev,
+        [itemId]: response.data
+      }));
+
+    } catch (error) {
+      console.error('Error updating enhanced stock count:', error);
+    }
+  };
+
+  const toggleCaseInput = (itemId) => {
+    setShowCaseInputs(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
   const loadShoppingList = async () => {
     try {
       const response = await axios.get(`${API}/shopping-list`);
