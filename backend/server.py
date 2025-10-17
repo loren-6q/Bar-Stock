@@ -622,17 +622,17 @@ async def initialize_real_data():
     
     # Enhanced real items based on the spreadsheet with proper case calculations and complete data
     real_items = [
-        # Beers (most popular items)
-        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 15, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 44.0, "cost_per_case": 660.0},
-        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0},
-        {"name": "Big Leo", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0},
-        {"name": "Small Leo", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0},
-        {"name": "Big Singha", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 50.08, "cost_per_case": 601.0},
-        {"name": "Small Singha", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 27.08, "cost_per_case": 650.0},
-        {"name": "Small Heineken", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 31.75, "cost_per_case": 762.0},
-        {"name": "Small San Miguel Lite", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 30.75, "cost_per_case": 738.0},
-        {"name": "Bam Bam (can)", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 14.0, "cost_per_case": 168.0},
-        {"name": "Soju", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 0.75, "cost_per_case": 9.0},
+        # Beers (most popular items) - commonly bought by case
+        {"name": "Big Chang", "category": "B", "category_name": "Beer", "units_per_case": 15, "min_stock": 30, "max_stock": 120, "primary_supplier": "Singha99", "cost_per_unit": 44.0, "cost_per_case": 660.0, "bought_by_case": True},
+        {"name": "Small Chang", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0, "bought_by_case": True},
+        {"name": "Big Leo", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 540.0, "bought_by_case": True},
+        {"name": "Small Leo", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 45.0, "cost_per_case": 1080.0, "bought_by_case": True},
+        {"name": "Big Singha", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 50.08, "cost_per_case": 601.0, "bought_by_case": True},
+        {"name": "Small Singha", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 48, "max_stock": 192, "primary_supplier": "Singha99", "cost_per_unit": 27.08, "cost_per_case": 650.0, "bought_by_case": True},
+        {"name": "Small Heineken", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 31.75, "cost_per_case": 762.0, "bought_by_case": True},
+        {"name": "Small San Miguel Lite", "category": "B", "category_name": "Beer", "units_per_case": 24, "min_stock": 24, "max_stock": 96, "primary_supplier": "Singha99", "cost_per_unit": 30.75, "cost_per_case": 738.0, "bought_by_case": True},
+        {"name": "Bam Bam (can)", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 14.0, "cost_per_case": 168.0, "bought_by_case": True},
+        {"name": "Soju", "category": "B", "category_name": "Beer", "units_per_case": 12, "min_stock": 12, "max_stock": 48, "primary_supplier": "Vendor", "cost_per_unit": 0.75, "cost_per_case": 9.0, "bought_by_case": True},
         
         # Thai Alcohol 
         {"name": "Charles House Rum", "category": "A", "category_name": "Thai Alcohol", "units_per_case": 12, "min_stock": 6, "max_stock": 24, "primary_supplier": "Makro", "cost_per_unit": 24.0, "cost_per_case": 288.0},
