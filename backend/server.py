@@ -154,6 +154,7 @@ class PurchaseEntry(BaseModel):
     notes: Optional[str] = None
 
 class PurchaseEntryCreate(BaseModel):
+    order_id: Optional[str] = None
     session_id: str
     item_id: str
     planned_quantity: int
@@ -161,6 +162,7 @@ class PurchaseEntryCreate(BaseModel):
     cost_per_unit: float
     total_cost: float
     supplier: str
+    delivery_received: bool = False
     notes: Optional[str] = None
 
 class SessionComparison(BaseModel):
