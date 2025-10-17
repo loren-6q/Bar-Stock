@@ -179,6 +179,9 @@ backend:
       - working: true
       - agent: "testing"
       - comment: "✅ TESTED: POST /api/initialize-real-data working perfectly. Successfully initialized 44 comprehensive items including beers, Thai alcohol, import alcohol, mixers, bar supplies, and housekeeping supplies with proper case calculations and pricing."
+      - working: true
+      - agent: "testing"
+      - comment: "✅ ENHANCED DATA IMPORT VERIFIED: Complete 79 items successfully loaded from spreadsheet with all categories (Beer: 10, Thai Alcohol: 13, Import Alcohol: 14, Mixers: 23, Bar Supplies: 5, Hostel Supplies: 14), all suppliers (Singha99: 30, Makro: 32, zBKK: 14, Vendor: 3), proper case information, bought_by_case flags, and accurate pricing. Data import system fully operational."
 
 frontend:
   - task: "Copy to clipboard functionality"
