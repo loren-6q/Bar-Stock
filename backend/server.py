@@ -337,6 +337,47 @@ async def update_stock_count(item_id: str, count_update: StockCountUpdate):
         await db.stock_counts.insert_one(prepare_for_mongo(count_obj.dict()))
         return count_obj
 
+# New endpoint for case/single input method
+@api_router.post("/stock-counts-enhanced/{item_id}", response_model=StockCount)
+async def create_enhanced_stock_count(item_id: str, stock_inputs: StockCountInputs):
+    # Get item to check units per case
+    item = await db.items.find_one({"id": item_id})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    units_per_case = item.get('units_per_case', 1)
+    
+    # Calculate total units for each location (cases * units_per_case + singles)
+    main_bar_total = (stock_inputs.main_bar.cases * units_per_case) + stock_inputs.main_bar.singles
+    beer_bar_total = (stock_inputs.beer_bar.cases * units_per_case) + stock_inputs.beer_bar.singles
+    lobby_total = (stock_inputs.lobby.cases * units_per_case) + stock_inputs.lobby.singles
+    storage_room_total = (stock_inputs.storage_room.cases * units_per_case) + stock_inputs.storage_room.singles
+    
+    total_count = main_bar_total + beer_bar_total + lobby_total + storage_room_total
+    
+    # Create or update stock count
+    stock_count_data = {
+        "item_id": item_id,
+        "main_bar": main_bar_total,
+        "beer_bar": beer_bar_total,
+        "lobby": lobby_total,
+        "storage_room": storage_room_total,
+        "total_count": total_count,
+        "counted_by": stock_inputs.counted_by,
+        "count_date": datetime.now(timezone.utc)
+    }
+    
+    # Try to update existing, or create new
+    existing = await db.stock_counts.find_one({"item_id": item_id})
+    if existing:
+        await db.stock_counts.update_one({"item_id": item_id}, {"$set": stock_count_data})
+    else:
+        stock_count = StockCount(**stock_count_data)
+        await db.stock_counts.insert_one(prepare_for_mongo(stock_count.dict()))
+    
+    updated_count = await db.stock_counts.find_one({"item_id": item_id})
+    return StockCount(**parse_from_mongo(updated_count))
+
 # Shopping list endpoint with case logic
 @api_router.get("/shopping-list")
 async def get_shopping_list():
