@@ -560,7 +560,8 @@ async def update_order_status(order_id: str, status: str, notes: Optional[str] =
 @api_router.post("/shopping-list/create-order/{supplier}")
 async def create_order_from_shopping_list(supplier: str, notes: Optional[str] = None):
     # Get current shopping list
-    shopping_list = await get_shopping_list_by_supplier()
+    shopping_list_response = await get_shopping_list()
+    shopping_list = shopping_list_response
     
     if supplier not in shopping_list:
         raise HTTPException(status_code=404, detail=f"No items found for supplier {supplier}")
