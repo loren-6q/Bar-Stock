@@ -125,9 +125,23 @@ class StockSessionCreate(BaseModel):
     session_type: str = "full_count"
     notes: Optional[str] = None
 
-# New models for historical tracking and purchase confirmation
+# Enhanced models for order confirmation and purchase tracking
+class ShoppingListOrder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    supplier: str
+    order_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: str = "pending"  # pending, ordered, received, confirmed
+    planned_items: List[Dict[str, Any]]  # original shopping list items
+    notes: Optional[str] = None
+
+class ShoppingListOrderCreate(BaseModel):
+    supplier: str
+    planned_items: List[Dict[str, Any]]
+    notes: Optional[str] = None
+
 class PurchaseEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: Optional[str] = None  # link to shopping list order
     session_id: str
     item_id: str
     planned_quantity: int  # from shopping list
@@ -136,6 +150,7 @@ class PurchaseEntry(BaseModel):
     total_cost: float
     supplier: str
     purchase_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    delivery_received: bool = False  # track if delivery was received
     notes: Optional[str] = None
 
 class PurchaseEntryCreate(BaseModel):
