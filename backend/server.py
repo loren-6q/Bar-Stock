@@ -723,7 +723,7 @@ async def initialize_real_data():
         item = Item(**item_data)
         await db.items.insert_one(prepare_for_mongo(item.dict()))
     
-    return {"message": "Real data initialized successfully", "items_count": len(real_items)}
+    return {"message": "Complete data initialized successfully - ALL items from spreadsheet", "items_count": len(real_items)}
 
 # Include the router in the main app
 app.include_router(api_router)
