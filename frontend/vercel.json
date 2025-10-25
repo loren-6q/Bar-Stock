@@ -1,0 +1,21 @@
+{
+  "framework": "create-react-app",
+  "env": {
+    "REACT_APP_BACKEND_URL": "@backend-url"
+  },
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "$REACT_APP_BACKEND_URL/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
