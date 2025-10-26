@@ -395,6 +395,7 @@ function StockCounter() {
   };
 
   const saveStockCountSession = async () => {
+    // eslint-disable-next-line no-restricted-globals
     const sessionName = prompt("Enter session name (e.g., 'Pre-Party Stock Count - October 3'):"); 
     if (!sessionName) return;
 
