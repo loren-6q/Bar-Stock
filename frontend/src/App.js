@@ -1217,13 +1217,7 @@ function StockCounter() {
 }
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<StockCounter />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <StockCounter />;
 }
 
 export default App;
