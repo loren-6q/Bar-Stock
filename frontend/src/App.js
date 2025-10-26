@@ -679,6 +679,7 @@ function StockCounter() {
   };
 
   const handleDeleteItem = async (item) => {
+    // eslint-disable-next-line no-restricted-globals
     if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
       try {
         await axios.delete(`${API}/items/${item.id}`);
