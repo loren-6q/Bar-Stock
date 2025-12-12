@@ -1141,6 +1141,79 @@ function StockCounter() {
           </TabsContent>
 
           <TabsContent value="manage" className="space-y-4" data-testid="manage-content">
+            {/* Manage Categories and Suppliers */}
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Manage Categories & Suppliers</CardTitle>
+                <p className="text-gray-600 text-sm">Add custom categories and suppliers</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Add Category */}
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <Label className="text-sm font-medium">Add New Category</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder="e.g. Wine, Spirits"
+                        className="h-8 text-sm"
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          if (newCategory.trim() && !categories.find(c => c.label === newCategory.trim())) {
+                            setCategories(prev => [...prev, { value: 'C', label: newCategory.trim() }]);
+                            setNewCategory('');
+                            toast({ title: "Category added", description: `"${newCategory.trim()}" added to categories` });
+                          }
+                        }}
+                        disabled={!newCategory.trim()}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {categories.map((cat, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">{cat.label}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Add Supplier */}
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <Label className="text-sm font-medium">Add New Supplier</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newSupplier}
+                        onChange={(e) => setNewSupplier(e.target.value)}
+                        placeholder="e.g. New Vendor"
+                        className="h-8 text-sm"
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          if (newSupplier.trim() && !suppliers.includes(newSupplier.trim())) {
+                            setSuppliers(prev => [...prev, newSupplier.trim()]);
+                            setNewSupplier('');
+                            toast({ title: "Supplier added", description: `"${newSupplier.trim()}" added to suppliers` });
+                          }
+                        }}
+                        disabled={!newSupplier.trim()}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {suppliers.map((sup, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">{sup}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1202,6 +1275,7 @@ function StockCounter() {
                         <Input
                           value={item.name}
                           onChange={(e) => handleLiveEdit(item.id, 'name', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1209,21 +1283,23 @@ function StockCounter() {
                       {/* Category */}
                       <div className="col-span-2">
                         <Label className="text-xs text-gray-600">Category</Label>
-                        <Select value={item.category_name} onValueChange={(value) => {
-                          const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
-                          handleLiveEdit(item.id, 'category_name', value);
-                          handleLiveEdit(item.id, 'category', categoryMap[value] || 'O');
-                        }}>
+                        <Select 
+                          value={item.category_name || ''} 
+                          onValueChange={(value) => {
+                            const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Other Bar': 'O', 'Hostel Supplies': 'Z' };
+                            handleLiveEdit(item.id, 'category_name', value);
+                            handleLiveEdit(item.id, 'category', categoryMap[value] || 'O');
+                            // Immediately save since select changes are final
+                            setTimeout(() => handleSaveOnBlur(item.id), 100);
+                          }}
+                        >
                           <SelectTrigger className="h-8 text-sm">
-                            <SelectValue />
+                            <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Beer">Beer</SelectItem>
-                            <SelectItem value="Thai Alcohol">Thai Alcohol</SelectItem>
-                            <SelectItem value="Import Alcohol">Import Alcohol</SelectItem>
-                            <SelectItem value="Mixers">Mixers</SelectItem>
-                            <SelectItem value="Bar Supplies">Bar Supplies</SelectItem>
-                            <SelectItem value="Hostel Supplies">Hostel Supplies</SelectItem>
+                            {categories.map((cat, idx) => (
+                              <SelectItem key={idx} value={cat.label}>{cat.label}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
