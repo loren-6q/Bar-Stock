@@ -668,71 +668,83 @@ function StockCounter() {
     }
   };
 
-  // Live editing functions - use debounced save to prevent race conditions
+  // Live editing functions - save immediately on each change
   const handleLiveEdit = async (itemId, field, value) => {
     // Update local state immediately for responsive UI
+    let updatedItem = null;
+    
     setItems(prev => {
       const updatedItems = prev.map(item => {
         if (item.id !== itemId) return item;
         
-        const updatedItem = { ...item, [field]: value };
+        const newItem = { ...item, [field]: value };
         
         // Auto-calculate costs if needed
-        if (field === 'cost_per_case' && updatedItem.units_per_case > 1 && parseFloat(value) > 0) {
-          updatedItem.cost_per_unit = (parseFloat(value) / updatedItem.units_per_case).toFixed(2);
-        } else if (field === 'cost_per_unit' && updatedItem.units_per_case > 1 && parseFloat(value) > 0) {
-          updatedItem.cost_per_case = (parseFloat(value) * updatedItem.units_per_case).toFixed(2);
+        if (field === 'cost_per_case' && newItem.units_per_case > 1 && parseFloat(value) > 0) {
+          newItem.cost_per_unit = (parseFloat(value) / newItem.units_per_case).toFixed(2);
+        } else if (field === 'cost_per_unit' && newItem.units_per_case > 1 && parseFloat(value) > 0) {
+          newItem.cost_per_case = (parseFloat(value) * newItem.units_per_case).toFixed(2);
         } else if (field === 'units_per_case') {
           // Recalculate case cost when units per case changes
-          if (updatedItem.cost_per_unit && parseFloat(updatedItem.cost_per_unit) > 0) {
-            updatedItem.cost_per_case = (parseFloat(updatedItem.cost_per_unit) * parseInt(value)).toFixed(2);
+          if (newItem.cost_per_unit && parseFloat(newItem.cost_per_unit) > 0) {
+            newItem.cost_per_case = (parseFloat(newItem.cost_per_unit) * parseInt(value)).toFixed(2);
           }
         }
         
-        return updatedItem;
+        updatedItem = newItem;
+        return newItem;
       });
       return updatedItems;
     });
     
-    // Mark this item as being edited
+    // Mark this item as being edited (for input fields that should save on blur)
     setEditingItemId(itemId);
   };
 
   // Save item changes on blur (when user leaves the field)
   const handleSaveOnBlur = async (itemId) => {
-    // Only save if this item was being edited
-    if (editingItemId !== itemId) return;
+    // Clear editing state
     setEditingItemId(null);
     
-    try {
-      // Get the current item from state
-      const item = items.find(i => i.id === itemId);
-      if (!item) return;
+    // Use a small delay to ensure state is updated
+    setTimeout(async () => {
+      try {
+        // Get the current item from the latest items state
+        const currentItems = await new Promise(resolve => {
+          setItems(prev => {
+            resolve(prev);
+            return prev;
+          });
+        });
+        
+        const item = currentItems.find(i => i.id === itemId);
+        if (!item) return;
 
-      // Update in database
-      await axios.put(`${API}/items/${itemId}`, {
-        name: item.name,
-        category: item.category,
-        category_name: item.category_name,
-        units_per_case: parseInt(item.units_per_case) || 1,
-        min_stock: parseInt(item.min_stock) || 0,
-        max_stock: parseInt(item.max_stock) || 0,
-        primary_supplier: item.primary_supplier,
-        cost_per_unit: parseFloat(item.cost_per_unit) || 0,
-        cost_per_case: parseFloat(item.cost_per_case) || null,
-        bought_by_case: item.bought_by_case || false
-      });
+        // Update in database
+        await axios.put(`${API}/items/${itemId}`, {
+          name: item.name,
+          category: item.category,
+          category_name: item.category_name,
+          units_per_case: parseInt(item.units_per_case) || 1,
+          min_stock: parseInt(item.min_stock) || 0,
+          max_stock: parseInt(item.max_stock) || 0,
+          primary_supplier: item.primary_supplier,
+          cost_per_unit: parseFloat(item.cost_per_unit) || 0,
+          cost_per_case: parseFloat(item.cost_per_case) || null,
+          bought_by_case: item.bought_by_case || false
+        });
 
-    } catch (error) {
-      console.error('Error updating item:', error);
-      toast({
-        title: "Error updating item",
-        description: "Could not save changes",
-        variant: "destructive",
-      });
-      // Reload items to get original values back
-      loadItems();
-    }
+      } catch (error) {
+        console.error('Error updating item:', error);
+        toast({
+          title: "Error updating item",
+          description: "Could not save changes",
+          variant: "destructive",
+        });
+        // Reload items to get original values back
+        loadItems();
+      }
+    }, 50);
   };
 
   const loadShoppingList = async () => {
