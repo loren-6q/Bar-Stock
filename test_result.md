@@ -24,6 +24,37 @@ Testing the Manage tab improvements:
 - User needs ability to add new categories and suppliers
 
 ## Test Environment
-- Frontend: http://localhost:3000
+- Frontend: https://stockhero-1.preview.emergentagent.com
 - Backend API: Check REACT_APP_BACKEND_URL in /app/frontend/.env
+
+## Testing Results (Completed by Testing Agent)
+
+### ✅ PASSED TESTS:
+1. **Category Dropdown Options**: All 6 expected categories found (Beer, Thai Alcohol, Import Alcohol, Mixers, Other Bar, Hostel Supplies)
+2. **Supplier Dropdown Options**: All 12 expected suppliers found (Singha99, Makro, Local Market, zBKK, Tesco, Big C, Vendor, Samui Shops, Mr DIY, Haad Rin, Jacky Chang, Other)
+3. **Add Item Dialog Consistency**: Category and supplier dropdowns in Add Item dialog match the inline edit dropdowns
+
+### ❌ FAILED TESTS:
+1. **Live Editing Issue**: Name field reverts to original value after blur - changes do NOT persist
+   - Original: "Buckets" → Changed to: "Buckets TEST" → After blur: "Buckets" (reverted)
+   - This is a critical issue preventing users from editing item names
+
+2. **Add New Category Feature**: Button not clickable/functional
+   - Can type "Wine" in input field but + button doesn't respond
+   - New categories are not being added to the system
+
+3. **Add New Supplier Feature**: Button not clickable/functional  
+   - Can type "New Vendor" in input field but + button doesn't respond
+   - New suppliers are not being added to the system
+
+### 🔍 TECHNICAL ISSUES IDENTIFIED:
+- Live editing save mechanism is not working properly (race condition or API issue)
+- Add Category/Supplier buttons have UI interaction issues (possibly overlay or event handler problems)
+- Changes are not persisting to the backend database
+
+### 📋 STATUS SUMMARY:
+- **Dropdown Display**: ✅ Working correctly
+- **Live Editing**: ❌ Critical failure - changes revert
+- **Add Category/Supplier**: ❌ UI buttons non-functional
+- **Dialog Consistency**: ✅ Working correctly
 
