@@ -1311,6 +1311,7 @@ function StockCounter() {
                           type="number"
                           value={item.units_per_case}
                           onChange={(e) => handleLiveEdit(item.id, 'units_per_case', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1323,6 +1324,7 @@ function StockCounter() {
                           step="0.01"
                           value={item.cost_per_unit}
                           onChange={(e) => handleLiveEdit(item.id, 'cost_per_unit', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1335,6 +1337,7 @@ function StockCounter() {
                           step="0.01"
                           value={item.cost_per_case || ''}
                           onChange={(e) => handleLiveEdit(item.id, 'cost_per_case', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1346,6 +1349,7 @@ function StockCounter() {
                           type="number"
                           value={item.min_stock}
                           onChange={(e) => handleLiveEdit(item.id, 'min_stock', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1357,6 +1361,7 @@ function StockCounter() {
                           type="number"
                           value={item.max_stock}
                           onChange={(e) => handleLiveEdit(item.id, 'max_stock', e.target.value)}
+                          onBlur={() => handleSaveOnBlur(item.id)}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -1364,16 +1369,21 @@ function StockCounter() {
                       {/* Supplier */}
                       <div className="col-span-1">
                         <Label className="text-xs text-gray-600">Supplier</Label>
-                        <Select value={item.primary_supplier} onValueChange={(value) => handleLiveEdit(item.id, 'primary_supplier', value)}>
+                        <Select 
+                          value={item.primary_supplier || ''} 
+                          onValueChange={(value) => {
+                            handleLiveEdit(item.id, 'primary_supplier', value);
+                            // Immediately save since select changes are final
+                            setTimeout(() => handleSaveOnBlur(item.id), 100);
+                          }}
+                        >
                           <SelectTrigger className="h-8 text-sm">
-                            <SelectValue />
+                            <SelectValue placeholder="Select supplier" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Singha99">Singha99</SelectItem>
-                            <SelectItem value="Makro">Makro</SelectItem>
-                            <SelectItem value="zBKK">zBKK</SelectItem>
-                            <SelectItem value="Vendor">Vendor</SelectItem>
-                            <SelectItem value="Local Market">Local Market</SelectItem>
+                            {suppliers.map((sup, idx) => (
+                              <SelectItem key={idx} value={sup}>{sup}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
