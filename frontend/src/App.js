@@ -1174,44 +1174,123 @@ function StockCounter() {
                   </Button>
                 </div>
 
-                <div className="space-y-2">
+                {/* Live Editable Items List */}
+                <div className="space-y-3">
                   {sortItems(items).map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-sm">{item.name}</h4>
-                          <Badge className={`${categoryColors[item.category]} text-xs`}>
-                            {item.category_name}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {item.primary_supplier}
-                          </Badge>
-                          {item.units_per_case > 1 && (
-                            <Badge variant="outline" className="text-xs">
-                              {item.units_per_case}/case
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Min: {item.min_stock} • Max: {item.max_stock} • Unit: ฿{item.cost_per_unit}
-                          {item.cost_per_case > 0 && ` • Case: ฿${item.cost_per_case}`}
-                        </div>
+                    <div key={item.id} className="grid grid-cols-12 gap-2 p-3 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
+                      {/* Name */}
+                      <div className="col-span-3">
+                        <Label className="text-xs text-gray-600">Name</Label>
+                        <Input
+                          value={item.name}
+                          onChange={(e) => handleLiveEdit(item.id, 'name', e.target.value)}
+                          className="h-8 text-sm"
+                        />
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditItem(item)}
-                          data-testid={`edit-item-${item.id}`}
-                          className="h-7 w-7 p-0"
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
+
+                      {/* Category */}
+                      <div className="col-span-2">
+                        <Label className="text-xs text-gray-600">Category</Label>
+                        <Select value={item.category_name} onValueChange={(value) => {
+                          const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
+                          handleLiveEdit(item.id, 'category_name', value);
+                          handleLiveEdit(item.id, 'category', categoryMap[value] || 'O');
+                        }}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Beer">Beer</SelectItem>
+                            <SelectItem value="Thai Alcohol">Thai Alcohol</SelectItem>
+                            <SelectItem value="Import Alcohol">Import Alcohol</SelectItem>
+                            <SelectItem value="Mixers">Mixers</SelectItem>
+                            <SelectItem value="Bar Supplies">Bar Supplies</SelectItem>
+                            <SelectItem value="Hostel Supplies">Hostel Supplies</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Units per Case */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Units/Case</Label>
+                        <Input
+                          type="number"
+                          value={item.units_per_case}
+                          onChange={(e) => handleLiveEdit(item.id, 'units_per_case', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Unit Cost */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Unit ฿</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.cost_per_unit}
+                          onChange={(e) => handleLiveEdit(item.id, 'cost_per_unit', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Case Cost */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Case ฿</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.cost_per_case || ''}
+                          onChange={(e) => handleLiveEdit(item.id, 'cost_per_case', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Min Stock */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Min</Label>
+                        <Input
+                          type="number"
+                          value={item.min_stock}
+                          onChange={(e) => handleLiveEdit(item.id, 'min_stock', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Max Stock */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Max</Label>
+                        <Input
+                          type="number"
+                          value={item.max_stock}
+                          onChange={(e) => handleLiveEdit(item.id, 'max_stock', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Supplier */}
+                      <div className="col-span-1">
+                        <Label className="text-xs text-gray-600">Supplier</Label>
+                        <Select value={item.primary_supplier} onValueChange={(value) => handleLiveEdit(item.id, 'primary_supplier', value)}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Singha99">Singha99</SelectItem>
+                            <SelectItem value="Makro">Makro</SelectItem>
+                            <SelectItem value="zBKK">zBKK</SelectItem>
+                            <SelectItem value="Vendor">Vendor</SelectItem>
+                            <SelectItem value="Local Market">Local Market</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Delete Button */}
+                      <div className="col-span-1 flex items-end">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteItem(item)}
-                          className="text-red-600 hover:text-red-700 h-7 w-7 p-0"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                           data-testid={`delete-item-${item.id}`}
                         >
                           <Trash2 className="w-3 h-3" />
