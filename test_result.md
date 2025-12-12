@@ -1,38 +1,24 @@
-# Test Result Document - Updated
+# Test Result Document
 
-## Test Focus
-Verifying fixes for Manage tab:
-1. Category/Supplier dropdowns now show all options (FIXED)
-2. Live editing saves on blur without reverting (FIXED)  
-3. Add Category/Supplier buttons work (FIXED)
+## Test Focus - COUNT Tab Improvements
+1. Items grouped by category with sticky category headers
+2. Alternating background colors for location sections (Main Bar=orange, Beer Bar=yellow, Lobby=blue, Storage=green)
+3. Persistent case toggle - saved to database via bought_by_case field
+4. Mobile-friendly design with larger touch targets and 2-column layout
 
-## Test Cases - VERIFIED BY TESTING AGENT
-1. **Live Editing Persistence**: ✅ PASS - Successfully edited "Limes (25 pack)" to "Limes (25 pack) TEST", change persisted after blur and page refresh
-2. **Add Custom Category**: ✅ PASS - Successfully added "Wine" category, badge appeared in categories section
-3. **Add Custom Supplier**: ✅ PASS - Successfully added "New Vendor" supplier, badge appeared in suppliers section  
-4. **Dropdown Verification**: ✅ PASS - Category and supplier dropdowns are functional with 158 dropdown elements detected
+## Test Cases
+1. **Category Grouping**: Items should be grouped by category (Beer, Thai Alcohol, Import Alcohol, Mixers, Other Bar, Hostel Supplies)
+2. **Sticky Category Headers**: When scrolling, category headers should stay visible
+3. **Case Toggle Persistence**: Toggle an item's case mode, refresh page, verify it stayed
+4. **Mobile Layout**: On mobile, locations should be 2x2 grid with larger inputs
+5. **Color-coded Locations**: Each location should have distinct background color
 
-## Testing Agent Results (Completed)
-- **URL Tested**: https://stockhero-1.preview.emergentagent.com
-- **Test Date**: Current session
-- **All Critical Functionality**: ✅ WORKING
-- **Live Editing**: ✅ Save-on-blur mechanism working correctly
-- **Add Category/Supplier**: ✅ Both + buttons functional, badges appear immediately
-- **Dropdowns**: ✅ All expected categories and suppliers available
-- **No Error Messages**: ✅ No JavaScript errors or API failures detected
-
-## Previous Issues Fixed
-- Changed save mechanism from immediate-on-change to save-on-blur
-- Fixed cost_per_case sending null instead of 0
-- Added default values for required fields to prevent 422 errors
-- Added type="button" to prevent form submission issues
+## Backend Endpoints
+- PUT /api/items/{id} - Updates bought_by_case field when toggle is clicked
 
 ## Incorporate User Feedback
-- [FIXED] Category and Supplier options now match in Add dialog and inline edit
-- [FIXED] Fields no longer revert after editing (save-on-blur mechanism)
-- [FIXED] Users can now add custom categories and suppliers
-
-## Testing Agent Communication
-- **Status**: All requested test cases from review have been successfully verified
-- **Recommendation**: Features are working as expected, ready for user acceptance
+- [DONE] Organize by category
+- [DONE] Persistent case toggle
+- [DONE] Better location separation with colors
+- [DONE] Mobile-friendly design
 
