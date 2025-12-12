@@ -35,7 +35,8 @@ const supplierColors = {
   'Other': 'bg-gray-500'
 };
 
-const categories = [
+// Default categories and suppliers - can be extended by user
+const defaultCategories = [
   { value: 'B', label: 'Beer' },
   { value: 'A', label: 'Thai Alcohol' },
   { value: 'A', label: 'Import Alcohol' },
@@ -44,7 +45,7 @@ const categories = [
   { value: 'Z', label: 'Hostel Supplies' }
 ];
 
-const suppliers = [
+const defaultSuppliers = [
   'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui Shops', 'Mr DIY', 'Haad Rin', 'Jacky Chang', 'Other'
 ];
 
