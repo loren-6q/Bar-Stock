@@ -334,6 +334,11 @@ function StockCounter() {
   const [showCaseInputs, setShowCaseInputs] = useState({}); // Which items to show case inputs for
   const [sortBy, setSortBy] = useState('category'); // Sorting option
   const [sortDirection, setSortDirection] = useState('asc'); // asc or desc
+  const [categories, setCategories] = useState(defaultCategories);
+  const [suppliers, setSuppliers] = useState(defaultSuppliers);
+  const [newCategory, setNewCategory] = useState('');
+  const [newSupplier, setNewSupplier] = useState('');
+  const [editingItemId, setEditingItemId] = useState(null); // Track which item is being edited
   const { toast } = useToast();
 
   useEffect(() => {
