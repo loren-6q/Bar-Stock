@@ -667,6 +667,61 @@ function StockCounter() {
     }
   };
 
+  // Live editing functions
+  const handleLiveEdit = async (itemId, field, value) => {
+    // Update local state immediately for responsive UI
+    setItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, [field]: value } : item
+    ));
+
+    try {
+      // Create updated item data
+      const item = items.find(i => i.id === itemId);
+      const updatedItem = { ...item, [field]: value };
+
+      // Auto-calculate costs if needed
+      if (field === 'cost_per_case' && updatedItem.units_per_case > 1) {
+        updatedItem.cost_per_unit = (parseFloat(value) / updatedItem.units_per_case).toFixed(2);
+      } else if (field === 'cost_per_unit' && updatedItem.units_per_case > 1) {
+        updatedItem.cost_per_case = (parseFloat(value) * updatedItem.units_per_case).toFixed(2);
+      } else if (field === 'units_per_case') {
+        // Recalculate case cost when units per case changes
+        if (updatedItem.cost_per_unit && parseFloat(updatedItem.cost_per_unit) > 0) {
+          updatedItem.cost_per_case = (parseFloat(updatedItem.cost_per_unit) * parseInt(value)).toFixed(2);
+        }
+      }
+
+      // Update in database
+      await axios.put(`${API}/items/${itemId}`, {
+        name: updatedItem.name,
+        category: updatedItem.category,
+        category_name: updatedItem.category_name,
+        units_per_case: parseInt(updatedItem.units_per_case) || 1,
+        min_stock: parseInt(updatedItem.min_stock) || 0,
+        max_stock: parseInt(updatedItem.max_stock) || 0,
+        primary_supplier: updatedItem.primary_supplier,
+        cost_per_unit: parseFloat(updatedItem.cost_per_unit) || 0,
+        cost_per_case: parseFloat(updatedItem.cost_per_case) || null,
+        bought_by_case: updatedItem.bought_by_case || false
+      });
+
+      // Update local state with calculated values
+      setItems(prev => prev.map(item => 
+        item.id === itemId ? updatedItem : item
+      ));
+
+    } catch (error) {
+      console.error('Error updating item:', error);
+      toast({
+        title: "Error updating item",
+        description: "Could not save changes",
+        variant: "destructive",
+      });
+      // Reload items to get original values back
+      loadItems();
+    }
+  };
+
   const loadShoppingList = async () => {
     try {
       const response = await axios.get(`${API}/shopping-list`);
