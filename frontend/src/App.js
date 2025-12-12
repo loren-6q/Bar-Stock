@@ -159,10 +159,11 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, cat
 
   const handleSave = () => {
     // Auto-calculate cost per case if not provided
-    if (formData.cost_per_case === 0 && formData.cost_per_unit > 0 && formData.units_per_case > 1) {
-      formData.cost_per_case = formData.cost_per_unit * formData.units_per_case;
+    const dataToSave = { ...formData };
+    if (dataToSave.cost_per_case === 0 && dataToSave.cost_per_unit > 0 && dataToSave.units_per_case > 1) {
+      dataToSave.cost_per_case = dataToSave.cost_per_unit * dataToSave.units_per_case;
     }
-    onSave(formData);
+    onSave(dataToSave);
   };
 
   return (
