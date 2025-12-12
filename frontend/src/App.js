@@ -601,11 +601,47 @@ function StockCounter() {
     }
   };
 
-  const toggleCaseInput = (itemId) => {
+  // Toggle case input mode and persist to database
+  const toggleCaseInput = async (itemId) => {
+    // Find the item
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Toggle the bought_by_case field
+    const newBoughtByCase = !item.bought_by_case;
+    
+    // Update local state immediately
+    setItems(prev => prev.map(i => 
+      i.id === itemId ? { ...i, bought_by_case: newBoughtByCase } : i
+    ));
+
+    // Also update the showCaseInputs for immediate visual feedback
     setShowCaseInputs(prev => ({
       ...prev,
-      [itemId]: !prev[itemId]
+      [itemId]: newBoughtByCase
     }));
+
+    // Persist to database
+    try {
+      await axios.put(`${API}/items/${itemId}`, {
+        name: item.name,
+        category: item.category,
+        category_name: item.category_name || 'Other Bar',
+        units_per_case: item.units_per_case || 1,
+        min_stock: item.min_stock || 0,
+        max_stock: item.max_stock || 0,
+        primary_supplier: item.primary_supplier || 'Other',
+        cost_per_unit: item.cost_per_unit || 0,
+        cost_per_case: item.cost_per_case || 0,
+        bought_by_case: newBoughtByCase
+      });
+    } catch (error) {
+      console.error('Error updating case mode:', error);
+      // Revert on error
+      setItems(prev => prev.map(i => 
+        i.id === itemId ? { ...i, bought_by_case: !newBoughtByCase } : i
+      ));
+    }
   };
 
   // Enhanced sorting function with secondary sort by name within categories
