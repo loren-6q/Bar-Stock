@@ -1167,12 +1167,15 @@ function StockCounter() {
                         className="h-8 text-sm"
                       />
                       <Button 
-                        size="sm" 
+                        type="button"
+                        size="sm"
+                        className="shrink-0"
                         onClick={() => {
-                          if (newCategory.trim() && !categories.find(c => c.label === newCategory.trim())) {
-                            setCategories(prev => [...prev, { value: 'C', label: newCategory.trim() }]);
+                          const trimmed = newCategory.trim();
+                          if (trimmed && !categories.find(c => c.label === trimmed)) {
+                            setCategories(prev => [...prev, { value: 'C', label: trimmed }]);
                             setNewCategory('');
-                            toast({ title: "Category added", description: `"${newCategory.trim()}" added to categories` });
+                            toast({ title: "Category added", description: `"${trimmed}" added to categories` });
                           }
                         }}
                         disabled={!newCategory.trim()}
@@ -1198,12 +1201,15 @@ function StockCounter() {
                         className="h-8 text-sm"
                       />
                       <Button 
-                        size="sm" 
+                        type="button"
+                        size="sm"
+                        className="shrink-0"
                         onClick={() => {
-                          if (newSupplier.trim() && !suppliers.includes(newSupplier.trim())) {
-                            setSuppliers(prev => [...prev, newSupplier.trim()]);
+                          const trimmed = newSupplier.trim();
+                          if (trimmed && !suppliers.includes(trimmed)) {
+                            setSuppliers(prev => [...prev, trimmed]);
                             setNewSupplier('');
-                            toast({ title: "Supplier added", description: `"${newSupplier.trim()}" added to suppliers` });
+                            toast({ title: "Supplier added", description: `"${trimmed}" added to suppliers` });
                           }
                         }}
                         disabled={!newSupplier.trim()}
