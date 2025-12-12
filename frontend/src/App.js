@@ -607,6 +607,58 @@ function StockCounter() {
     }));
   };
 
+  // Sorting function for items
+  const sortItems = (itemsToSort) => {
+    const sorted = [...itemsToSort].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'category':
+          aValue = a.category_name || a.category;
+          bValue = b.category_name || b.category;
+          break;
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'supplier':
+          aValue = a.primary_supplier;
+          bValue = b.primary_supplier;
+          break;
+        case 'cost':
+          aValue = a.cost_per_unit || 0;
+          bValue = b.cost_per_unit || 0;
+          break;
+        default:
+          aValue = a.name;
+          bValue = b.name;
+      }
+      
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+    
+    return sorted;
+  };
+
+  // Toggle sort direction when clicking the same sort option
+  const handleSort = (newSortBy) => {
+    if (sortBy === newSortBy) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortDirection('asc');
+    }
+  };
+
   const loadShoppingList = async () => {
     try {
       const response = await axios.get(`${API}/shopping-list`);
