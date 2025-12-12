@@ -607,7 +607,7 @@ function StockCounter() {
     }));
   };
 
-  // Sorting function for items
+  // Enhanced sorting function with secondary sort by name within categories
   const sortItems = (itemsToSort) => {
     const sorted = [...itemsToSort].sort((a, b) => {
       let aValue, bValue;
@@ -616,6 +616,10 @@ function StockCounter() {
         case 'category':
           aValue = a.category_name || a.category;
           bValue = b.category_name || b.category;
+          // Secondary sort by name within same category
+          if (aValue === bValue) {
+            return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
+          }
           break;
         case 'name':
           aValue = a.name;
@@ -624,6 +628,10 @@ function StockCounter() {
         case 'supplier':
           aValue = a.primary_supplier;
           bValue = b.primary_supplier;
+          // Secondary sort by name within same supplier
+          if (aValue === bValue) {
+            return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
+          }
           break;
         case 'cost':
           aValue = a.cost_per_unit || 0;
