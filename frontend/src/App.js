@@ -1531,6 +1531,8 @@ function StockCounter() {
           onCancel={() => setEditDialogOpen(false)}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
+          categories={categories}
+          suppliers={suppliers}
         />
 
         <CopyTextDialog
