@@ -7,7 +7,7 @@ from datetime import datetime
 
 def test_all_new_features():
     """Test all the new backend functionality as requested in the review"""
-    base_url = "https://stocktrackr-1.preview.emergentagent.com"
+    base_url = "https://stockhero-1.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🧪 Testing All New Backend Features")

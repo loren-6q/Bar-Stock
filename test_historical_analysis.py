@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 def test_historical_analysis():
-    base_url = "https://stocktrackr-1.preview.emergentagent.com"
+    base_url = "https://stockhero-1.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🧪 Testing Historical Analysis APIs")
