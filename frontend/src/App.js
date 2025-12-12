@@ -1074,8 +1074,45 @@ function StockCounter() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Sorting Controls */}
+                <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                  <Button
+                    variant={sortBy === 'category' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleSort('category')}
+                    className="text-xs"
+                  >
+                    Category {sortBy === 'category' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Button>
+                  <Button
+                    variant={sortBy === 'name' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleSort('name')}
+                    className="text-xs"
+                  >
+                    Name {sortBy === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Button>
+                  <Button
+                    variant={sortBy === 'supplier' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleSort('supplier')}
+                    className="text-xs"
+                  >
+                    Supplier {sortBy === 'supplier' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Button>
+                  <Button
+                    variant={sortBy === 'cost' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleSort('cost')}
+                    className="text-xs"
+                  >
+                    Cost {sortBy === 'cost' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </Button>
+                </div>
+
                 <div className="space-y-2">
-                  {items.map(item => (
+                  {sortItems(items).map(item => (
                     <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
