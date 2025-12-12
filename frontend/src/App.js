@@ -673,48 +673,60 @@ function StockCounter() {
     }
   };
 
-  // Live editing functions
+  // Live editing functions - use debounced save to prevent race conditions
   const handleLiveEdit = async (itemId, field, value) => {
     // Update local state immediately for responsive UI
-    setItems(prev => prev.map(item => 
-      item.id === itemId ? { ...item, [field]: value } : item
-    ));
-
-    try {
-      // Create updated item data
-      const item = items.find(i => i.id === itemId);
-      const updatedItem = { ...item, [field]: value };
-
-      // Auto-calculate costs if needed
-      if (field === 'cost_per_case' && updatedItem.units_per_case > 1) {
-        updatedItem.cost_per_unit = (parseFloat(value) / updatedItem.units_per_case).toFixed(2);
-      } else if (field === 'cost_per_unit' && updatedItem.units_per_case > 1) {
-        updatedItem.cost_per_case = (parseFloat(value) * updatedItem.units_per_case).toFixed(2);
-      } else if (field === 'units_per_case') {
-        // Recalculate case cost when units per case changes
-        if (updatedItem.cost_per_unit && parseFloat(updatedItem.cost_per_unit) > 0) {
-          updatedItem.cost_per_case = (parseFloat(updatedItem.cost_per_unit) * parseInt(value)).toFixed(2);
+    setItems(prev => {
+      const updatedItems = prev.map(item => {
+        if (item.id !== itemId) return item;
+        
+        const updatedItem = { ...item, [field]: value };
+        
+        // Auto-calculate costs if needed
+        if (field === 'cost_per_case' && updatedItem.units_per_case > 1 && parseFloat(value) > 0) {
+          updatedItem.cost_per_unit = (parseFloat(value) / updatedItem.units_per_case).toFixed(2);
+        } else if (field === 'cost_per_unit' && updatedItem.units_per_case > 1 && parseFloat(value) > 0) {
+          updatedItem.cost_per_case = (parseFloat(value) * updatedItem.units_per_case).toFixed(2);
+        } else if (field === 'units_per_case') {
+          // Recalculate case cost when units per case changes
+          if (updatedItem.cost_per_unit && parseFloat(updatedItem.cost_per_unit) > 0) {
+            updatedItem.cost_per_case = (parseFloat(updatedItem.cost_per_unit) * parseInt(value)).toFixed(2);
+          }
         }
-      }
+        
+        return updatedItem;
+      });
+      return updatedItems;
+    });
+    
+    // Mark this item as being edited
+    setEditingItemId(itemId);
+  };
+
+  // Save item changes on blur (when user leaves the field)
+  const handleSaveOnBlur = async (itemId) => {
+    // Only save if this item was being edited
+    if (editingItemId !== itemId) return;
+    setEditingItemId(null);
+    
+    try {
+      // Get the current item from state
+      const item = items.find(i => i.id === itemId);
+      if (!item) return;
 
       // Update in database
       await axios.put(`${API}/items/${itemId}`, {
-        name: updatedItem.name,
-        category: updatedItem.category,
-        category_name: updatedItem.category_name,
-        units_per_case: parseInt(updatedItem.units_per_case) || 1,
-        min_stock: parseInt(updatedItem.min_stock) || 0,
-        max_stock: parseInt(updatedItem.max_stock) || 0,
-        primary_supplier: updatedItem.primary_supplier,
-        cost_per_unit: parseFloat(updatedItem.cost_per_unit) || 0,
-        cost_per_case: parseFloat(updatedItem.cost_per_case) || null,
-        bought_by_case: updatedItem.bought_by_case || false
+        name: item.name,
+        category: item.category,
+        category_name: item.category_name,
+        units_per_case: parseInt(item.units_per_case) || 1,
+        min_stock: parseInt(item.min_stock) || 0,
+        max_stock: parseInt(item.max_stock) || 0,
+        primary_supplier: item.primary_supplier,
+        cost_per_unit: parseFloat(item.cost_per_unit) || 0,
+        cost_per_case: parseFloat(item.cost_per_case) || null,
+        bought_by_case: item.bought_by_case || false
       });
-
-      // Update local state with calculated values
-      setItems(prev => prev.map(item => 
-        item.id === itemId ? updatedItem : item
-      ));
 
     } catch (error) {
       console.error('Error updating item:', error);
