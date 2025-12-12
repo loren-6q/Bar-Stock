@@ -331,6 +331,8 @@ function StockCounter() {
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [enhancedCounts, setEnhancedCounts] = useState({}); // For case/single inputs
   const [showCaseInputs, setShowCaseInputs] = useState({}); // Which items to show case inputs for
+  const [sortBy, setSortBy] = useState('category'); // Sorting option
+  const [sortDirection, setSortDirection] = useState('asc'); // asc or desc
   const { toast } = useToast();
 
   useEffect(() => {
