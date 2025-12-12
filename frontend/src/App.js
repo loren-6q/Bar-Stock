@@ -891,135 +891,197 @@ function StockCounter() {
           </TabsList>
 
           <TabsContent value="count" className="space-y-4" data-testid="count-content">
-            {/* Stock Count Session Header */}
+            {/* Stock Count Session Header - Mobile Optimized */}
             <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 shrink-0" />
                     <div>
-                      <h3 className="font-semibold text-blue-900">Stock Count Session</h3>
-                      <p className="text-sm text-blue-700">
+                      <h3 className="font-semibold text-blue-900 text-sm sm:text-base">Stock Count</h3>
+                      <p className="text-xs sm:text-sm text-blue-700">
                         {currentSession ? 
                           `Active: ${currentSession.session_name}` : 
-                          'No active session - counts will be saved automatically'
+                          'Counts save automatically'
                         }
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-blue-700 border-blue-300">
-                      {getTotalItemsCounted()} items counted
+                  <div className="flex items-center gap-2 justify-end">
+                    <Badge variant="outline" className="text-blue-700 border-blue-300 text-xs">
+                      {getTotalItemsCounted()} counted
                     </Badge>
                     <Button 
                       onClick={saveStockCountSession}
                       size="sm"
+                      className="h-8"
                       data-testid="save-stock-session"
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Session
+                      <Save className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Save Session</span>
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid gap-3">
-              {items.map(item => {
-                const count = stockCounts[item.id] || { main_bar: 0, beer_bar: 0, lobby: 0, storage_room: 0, total_count: 0 };
-                
-                return (
-                  <Card key={item.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all duration-200" data-testid={`item-card-${item.id}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-sm font-semibold">{item.name}</CardTitle>
-                          <Badge className={`${categoryColors[item.category]} text-xs`}>
-                            {item.category_name}
-                          </Badge>
-                          {item.units_per_case > 1 && (
-                            <Badge variant="outline" className="text-xs">
-                              <Package className="w-3 h-3 mr-1" />
-                              {item.units_per_case}/case
-                            </Badge>
-                          )}
-                          {item.units_per_case > 1 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleCaseInput(item.id)}
-                              className="text-xs h-6 px-2"
+            {/* Items grouped by category */}
+            <div className="space-y-4">
+              {(() => {
+                // Group items by category
+                const groupedItems = items.reduce((groups, item) => {
+                  const category = item.category_name || 'Other';
+                  if (!groups[category]) groups[category] = [];
+                  groups[category].push(item);
+                  return groups;
+                }, {});
+
+                // Sort categories and items within each category
+                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Other Bar', 'Hostel Supplies'];
+                const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
+                  const aIdx = categoryOrder.indexOf(a);
+                  const bIdx = categoryOrder.indexOf(b);
+                  if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
+                  if (aIdx === -1) return 1;
+                  if (bIdx === -1) return -1;
+                  return aIdx - bIdx;
+                });
+
+                return sortedCategories.map(category => (
+                  <div key={category} className="space-y-2">
+                    {/* Category Header */}
+                    <div className={`sticky top-0 z-10 px-3 py-2 rounded-lg font-semibold text-sm flex items-center justify-between ${
+                      category === 'Beer' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                      category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-100 text-red-800 border border-red-200' :
+                      category === 'Mixers' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      category === 'Hostel Supplies' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                      'bg-green-100 text-green-800 border border-green-200'
+                    }`}>
+                      <span>{category}</span>
+                      <Badge variant="outline" className="text-xs">{groupedItems[category].length} items</Badge>
+                    </div>
+
+                    {/* Items in this category */}
+                    <div className="space-y-2">
+                      {groupedItems[category]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((item, itemIndex) => {
+                          const count = stockCounts[item.id] || { main_bar: 0, beer_bar: 0, lobby: 0, storage_room: 0, total_count: 0 };
+                          // Auto-show case inputs for items that are bought by case
+                          const showCaseMode = item.bought_by_case || showCaseInputs[item.id];
+                          
+                          return (
+                            <Card 
+                              key={item.id} 
+                              className={`shadow-sm transition-all duration-200 ${
+                                itemIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                              }`}
+                              data-testid={`item-card-${item.id}`}
                             >
-                              {showCaseInputs[item.id] ? 'Simple' : 'Case+Single'}
-                            </Button>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
-                            {count.total_count}
-                          </div>
-                          <div className="text-xs text-gray-500">Total</div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {[
-                          { key: 'main_bar', label: 'Main Bar', icon: '🍺' },
-                          { key: 'beer_bar', label: 'Beer Bar', icon: '🍻' },
-                          { key: 'lobby', label: 'Lobby', icon: '🏨' },
-                          { key: 'storage_room', label: 'Storage', icon: '📦' }
-                        ].map(location => (
-                          <div key={location.key} className="space-y-1">
-                            <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
-                              <span>{location.icon}</span>
-                              {location.label}
-                            </label>
-                            
-                            {/* Enhanced Case+Single Input Mode */}
-                            {item.bought_by_case && showCaseInputs[item.id] ? (
-                              <div className="space-y-1">
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
-                                    onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
-                                    className="text-center font-medium h-6 text-xs w-1/2"
-                                    placeholder="0"
-                                  />
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
-                                    onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
-                                    className="text-center font-medium h-6 text-xs w-1/2"
-                                    placeholder="0"
-                                  />
-                                </div>
-                                <div className="text-xs text-gray-500 text-center">
-                                  Cases + Singles
+                              {/* Item Header - Mobile Optimized */}
+                              <div className="px-3 py-2 border-b border-gray-100">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <span className="font-semibold text-sm truncate">{item.name}</span>
+                                    {item.units_per_case > 1 && (
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        <Package className="w-3 h-3 mr-1" />
+                                        {item.units_per_case}/case
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {item.units_per_case > 1 && (
+                                      <Button
+                                        variant={showCaseMode ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => toggleCaseInput(item.id)}
+                                        className="text-xs h-7 px-2"
+                                      >
+                                        {showCaseMode ? '📦' : '1️⃣'}
+                                      </Button>
+                                    )}
+                                    <div className="text-right min-w-[50px]">
+                                      <div className="text-lg font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
+                                        {count.total_count}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            ) : (
-                              /* Regular Single Input Mode */
-                              <Input
-                                type="number"
-                                min="0"
-                                value={count[location.key] || ''}
-                                onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                                className="text-center font-medium h-7 text-sm"
-                                placeholder="0"
-                                data-testid={`count-input-${item.id}-${location.key}`}
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+
+                              {/* Location Inputs - Mobile Optimized with Alternating Colors */}
+                              <div className="p-2">
+                                <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-2">
+                                  {[
+                                    { key: 'main_bar', label: 'Main Bar', icon: '🍺', bgClass: 'bg-orange-50' },
+                                    { key: 'beer_bar', label: 'Beer Bar', icon: '🍻', bgClass: 'bg-yellow-50' },
+                                    { key: 'lobby', label: 'Lobby', icon: '🏨', bgClass: 'bg-blue-50' },
+                                    { key: 'storage_room', label: 'Storage', icon: '📦', bgClass: 'bg-green-50' }
+                                  ].map((location, locIndex) => (
+                                    <div 
+                                      key={location.key} 
+                                      className={`${location.bgClass} rounded-lg p-2 border border-gray-200`}
+                                    >
+                                      <label className="text-xs font-medium text-gray-700 flex items-center gap-1 mb-1">
+                                        <span className="text-base">{location.icon}</span>
+                                        <span className="truncate">{location.label}</span>
+                                      </label>
+                                      
+                                      {/* Case+Single Input Mode */}
+                                      {showCaseMode && item.units_per_case > 1 ? (
+                                        <div className="space-y-1">
+                                          <div className="flex gap-1">
+                                            <div className="flex-1">
+                                              <Input
+                                                type="number"
+                                                inputMode="numeric"
+                                                min="0"
+                                                value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
+                                                onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
+                                                className="text-center font-bold h-10 text-base bg-white"
+                                                placeholder="0"
+                                              />
+                                              <div className="text-xs text-gray-500 text-center mt-0.5">cases</div>
+                                            </div>
+                                            <div className="flex-1">
+                                              <Input
+                                                type="number"
+                                                inputMode="numeric"
+                                                min="0"
+                                                value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
+                                                onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
+                                                className="text-center font-bold h-10 text-base bg-white"
+                                                placeholder="0"
+                                              />
+                                              <div className="text-xs text-gray-500 text-center mt-0.5">singles</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        /* Regular Single Input Mode */
+                                        <Input
+                                          type="number"
+                                          inputMode="numeric"
+                                          min="0"
+                                          value={count[location.key] || ''}
+                                          onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
+                                          className="text-center font-bold h-10 text-base bg-white"
+                                          placeholder="0"
+                                          data-testid={`count-input-${item.id}-${location.key}`}
+                                        />
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </TabsContent>
 
