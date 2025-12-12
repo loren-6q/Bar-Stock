@@ -241,8 +241,8 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, cat
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {suppliers.map(supplier => (
-                  <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                {(suppliers || defaultSuppliers).map((supplier, idx) => (
+                  <SelectItem key={idx} value={supplier}>{supplier}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
