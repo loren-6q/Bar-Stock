@@ -124,7 +124,7 @@ function CopyTextDialog({ text, supplier, open, onOpenChange }) {
   );
 }
 
-function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
+function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, categories, suppliers }) {
   const [formData, setFormData] = useState({
     name: '',
     category: 'B',
@@ -132,7 +132,7 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange }) {
     units_per_case: 1,
     min_stock: 0,
     max_stock: 0,
-    primary_supplier: 'Singha99',
+    primary_supplier: suppliers?.[0] || 'Singha99',
     cost_per_unit: 0,
     cost_per_case: 0,
     bought_by_case: false
