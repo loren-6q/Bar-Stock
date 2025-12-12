@@ -720,17 +720,17 @@ function StockCounter() {
         const item = currentItems.find(i => i.id === itemId);
         if (!item) return;
 
-        // Update in database
+        // Update in database - ensure all required fields have valid values
         await axios.put(`${API}/items/${itemId}`, {
-          name: item.name,
-          category: item.category,
-          category_name: item.category_name,
+          name: item.name || 'Unnamed Item',
+          category: item.category || 'O',
+          category_name: item.category_name || 'Other Bar',
           units_per_case: parseInt(item.units_per_case) || 1,
           min_stock: parseInt(item.min_stock) || 0,
           max_stock: parseInt(item.max_stock) || 0,
-          primary_supplier: item.primary_supplier,
+          primary_supplier: item.primary_supplier || 'Other',
           cost_per_unit: parseFloat(item.cost_per_unit) || 0,
-          cost_per_case: parseFloat(item.cost_per_case) || null,
+          cost_per_case: parseFloat(item.cost_per_case) || 0,
           bought_by_case: item.bought_by_case || false
         });
 
