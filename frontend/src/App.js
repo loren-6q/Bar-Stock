@@ -186,22 +186,16 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, cat
             <div>
               <Label htmlFor="category">Category</Label>
               <Select value={formData.category_name} onValueChange={(value) => {
-                const cat = value === 'Beer' ? 'B' : 
-                           value === 'Thai Alcohol' || value === 'Import Alcohol' ? 'A' :
-                           value === 'Mixers' ? 'M' :
-                           value === 'Other Bar' ? 'O' : 'Z';
-                setFormData({...formData, category: cat, category_name: value});
+                const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Other Bar': 'O', 'Hostel Supplies': 'Z' };
+                setFormData({...formData, category: categoryMap[value] || 'O', category_name: value});
               }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Beer">Beer</SelectItem>
-                  <SelectItem value="Thai Alcohol">Thai Alcohol</SelectItem>
-                  <SelectItem value="Import Alcohol">Import Alcohol</SelectItem>
-                  <SelectItem value="Mixers">Mixers</SelectItem>
-                  <SelectItem value="Other Bar">Other Bar</SelectItem>
-                  <SelectItem value="Hostel Supplies">Hostel Supplies</SelectItem>
+                  {(categories || defaultCategories).map((cat, idx) => (
+                    <SelectItem key={idx} value={cat.label}>{cat.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
