@@ -1896,6 +1896,70 @@ function StockCounter() {
           </DialogContent>
         </Dialog>
 
+        {/* Price List Dialog */}
+        <Dialog open={priceListOpen} onOpenChange={setPriceListOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>💰 Price List - Cost per Unit</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {(() => {
+                // Group items by category
+                const grouped = items.reduce((acc, item) => {
+                  const cat = item.category_name || 'Other';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(item);
+                  return acc;
+                }, {});
+                
+                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
+                const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                  const aIdx = categoryOrder.indexOf(a);
+                  const bIdx = categoryOrder.indexOf(b);
+                  if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
+                  if (aIdx === -1) return 1;
+                  if (bIdx === -1) return -1;
+                  return aIdx - bIdx;
+                });
+                
+                return sortedCategories.map(category => (
+                  <div key={category}>
+                    <div className={`sticky top-0 z-10 px-2 py-1 rounded font-semibold text-xs mb-1 ${
+                      category === 'Beer' ? 'bg-amber-200 text-amber-900' :
+                      category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-200 text-red-900' :
+                      category === 'Mixers' ? 'bg-blue-200 text-blue-900' :
+                      category === 'Hostel Supplies' ? 'bg-purple-200 text-purple-900' :
+                      'bg-green-200 text-green-900'
+                    }`}>
+                      {category} ({grouped[category].length})
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-0.5 px-1">
+                      {grouped[category]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(item => (
+                          <div key={item.id} className="flex justify-between items-center py-0.5 border-b border-gray-100">
+                            <span className="text-xs text-gray-700 truncate pr-2">{item.name}</span>
+                            <span className="text-xs font-bold text-green-700 whitespace-nowrap">
+                              ฿{item.cost_per_unit?.toFixed(0) || '0'}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+            
+            <div className="pt-3 border-t flex justify-between items-center text-xs text-gray-500">
+              <span>{items.length} items total</span>
+              <Button variant="outline" size="sm" onClick={() => setPriceListOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
       
