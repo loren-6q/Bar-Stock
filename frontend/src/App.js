@@ -805,17 +805,112 @@ function StockCounter() {
     }
   };
 
+  // Get adjusted quantity for an item (user override or original)
+  const getAdjustedQty = (itemId, originalQty, isCases = false) => {
+    const key = isCases ? `${itemId}_cases` : `${itemId}_units`;
+    return orderAdjustments[key] !== undefined ? orderAdjustments[key] : originalQty;
+  };
+
+  // Update order adjustment
+  const updateOrderAdjustment = (itemId, value, isCases = false) => {
+    const key = isCases ? `${itemId}_cases` : `${itemId}_units`;
+    setOrderAdjustments(prev => ({
+      ...prev,
+      [key]: value === '' ? undefined : parseInt(value) || 0
+    }));
+  };
+
+  // Generate clean copy text with adjusted quantities
   const showCopyDialog = async (supplier) => {
+    if (!shoppingList[supplier]) return;
+    
+    const items = shoppingList[supplier];
+    let textLines = [`Order for ${supplier}:`, ''];
+    let totalCost = 0;
+    
+    for (const item of items) {
+      const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
+      const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
+      
+      // Calculate cost based on adjusted qty
+      let itemCost;
+      let qtyText;
+      
+      if (item.case_calculation.cases_to_buy > 0 || adjCases > 0) {
+        itemCost = adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1));
+        qtyText = `${adjCases} case${adjCases !== 1 ? 's' : ''}`;
+      } else {
+        itemCost = adjUnits * item.cost_per_unit;
+        qtyText = `${adjUnits} units`;
+      }
+      totalCost += itemCost;
+      
+      textLines.push(`• ${item.item_name}: ${qtyText}`);
+    }
+    
+    textLines.push('');
+    textLines.push(`Est. Total: ฿${totalCost.toFixed(0)}`);
+    
+    setCopyText(textLines.join('\n'));
+    setCopySupplier(supplier);
+    setCopyDialogOpen(true);
+  };
+
+  // Create order with adjusted quantities for purchase confirmation
+  const createPendingOrder = (supplier) => {
+    if (!shoppingList[supplier]) return;
+    
+    const items = shoppingList[supplier].map(item => {
+      const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
+      const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
+      
+      return {
+        ...item,
+        ordered_cases: adjCases,
+        ordered_units: adjUnits,
+        actual_cases: adjCases, // Will be edited in confirmation
+        actual_units: adjUnits,
+        actual_cost: item.cost_per_case ? adjCases * item.cost_per_case : adjUnits * item.cost_per_unit
+      };
+    });
+    
+    const order = {
+      id: Date.now().toString(),
+      supplier,
+      created_at: new Date().toISOString(),
+      status: 'pending',
+      items
+    };
+    
+    setCurrentOrder(order);
+    setConfirmPurchaseDialog(true);
+  };
+
+  // Confirm purchase - save actual quantities and costs
+  const confirmPurchase = async () => {
+    if (!currentOrder) return;
+    
     try {
-      const response = await axios.get(`${API}/shopping-list-text/${supplier}`);
-      setCopyText(response.data.text);
-      setCopySupplier(supplier);
-      setCopyDialogOpen(true);
+      await axios.post(`${API}/orders`, {
+        ...currentOrder,
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      });
+      
+      toast({
+        title: "Purchase recorded!",
+        description: `Order from ${currentOrder.supplier} has been saved to history.`,
+      });
+      
+      setConfirmPurchaseDialog(false);
+      setCurrentOrder(null);
+      setOrderAdjustments({}); // Reset adjustments
+      loadShoppingList(); // Refresh
     } catch (error) {
-      console.error('Error loading copy text:', error);
+      console.error('Error saving purchase:', error);
       toast({
         title: "Error",
-        description: "Could not prepare copy text",
+        description: "Could not save purchase record",
         variant: "destructive",
       });
     }
