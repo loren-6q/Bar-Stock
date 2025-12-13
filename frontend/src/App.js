@@ -41,12 +41,12 @@ const defaultCategories = [
   { value: 'A', label: 'Thai Alcohol' },
   { value: 'A', label: 'Import Alcohol' },
   { value: 'M', label: 'Mixers' },
-  { value: 'O', label: 'Other Bar' },
+  { value: 'O', label: 'Bar Supplies' },
   { value: 'Z', label: 'Hostel Supplies' }
 ];
 
 const defaultSuppliers = [
-  'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui Shops', 'Mr DIY', 'Haad Rin', 'Jacky Chang', 'Other'
+  'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui', 'Mr DIY', 'Supercheap', 'Lazada', 'Other'
 ];
 
 function CopyTextDialog({ text, supplier, open, onOpenChange }) {
