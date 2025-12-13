@@ -620,6 +620,20 @@ async def delete_purchase_entry(purchase_id: str):
         raise HTTPException(status_code=404, detail="Purchase entry not found")
     return {"message": "Purchase entry deleted successfully"}
 
+# Bulk order confirmation endpoint
+@api_router.post("/orders")
+async def save_confirmed_order(order: dict):
+    """Save a confirmed purchase order with actual quantities and costs"""
+    order['_id'] = None  # MongoDB will generate
+    await db.confirmed_orders.insert_one(order)
+    return {"message": "Order saved successfully", "order_id": order.get('id')}
+
+@api_router.get("/orders")
+async def get_confirmed_orders():
+    """Get all confirmed orders for history"""
+    orders = await db.confirmed_orders.find({}, {"_id": 0}).sort("completed_at", -1).to_list(100)
+    return orders
+
 # Historical analysis and reporting endpoints
 @api_router.get("/reports/session-comparison/{session1_id}/{session2_id}")
 async def compare_sessions(session1_id: str, session2_id: str):
