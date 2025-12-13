@@ -187,7 +187,7 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, cat
             <div>
               <Label htmlFor="category">Category</Label>
               <Select value={formData.category_name} onValueChange={(value) => {
-                const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Other Bar': 'O', 'Hostel Supplies': 'Z' };
+                const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
                 setFormData({...formData, category: categoryMap[value] || 'O', category_name: value});
               }}>
                 <SelectTrigger>
@@ -1530,7 +1530,7 @@ function StockCounter() {
                         <Select 
                           value={item.category_name || ''} 
                           onValueChange={(value) => {
-                            const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Other Bar': 'O', 'Hostel Supplies': 'Z' };
+                            const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
                             handleLiveEdit(item.id, 'category_name', value);
                             handleLiveEdit(item.id, 'category', categoryMap[value] || 'O');
                             // Immediately save since select changes are final
