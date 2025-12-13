@@ -1046,53 +1046,45 @@ function StockCounter() {
                                 </div>
                               </div>
 
-                              {/* Location Inputs - Mobile Optimized with Alternating Colors */}
-                              <div className="p-2">
-                                <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-2">
+                              {/* Location Inputs - Compact inline layout */}
+                              <div className="px-2 pb-2 pt-1">
+                                <div className="grid grid-cols-2 gap-1">
                                   {[
-                                    { key: 'main_bar', label: 'Main Bar', icon: '🍺', bgClass: 'bg-orange-50' },
-                                    { key: 'beer_bar', label: 'Beer Bar', icon: '🍻', bgClass: 'bg-yellow-50' },
-                                    { key: 'lobby', label: 'Lobby', icon: '🏨', bgClass: 'bg-blue-50' },
-                                    { key: 'storage_room', label: 'Storage', icon: '📦', bgClass: 'bg-green-50' }
-                                  ].map((location, locIndex) => (
+                                    { key: 'main_bar', label: 'Main', icon: '🍺', bgClass: 'bg-orange-200 border-orange-300' },
+                                    { key: 'beer_bar', label: 'Beer', icon: '🍻', bgClass: 'bg-yellow-200 border-yellow-300' },
+                                    { key: 'lobby', label: 'Lobby', icon: '🏨', bgClass: 'bg-blue-200 border-blue-300' },
+                                    { key: 'storage_room', label: 'Storage', icon: '📦', bgClass: 'bg-green-200 border-green-300' }
+                                  ].map((location) => (
                                     <div 
                                       key={location.key} 
-                                      className={`${location.bgClass} rounded-lg p-2 border border-gray-200`}
+                                      className={`${location.bgClass} rounded px-2 py-1.5 border flex items-center gap-1`}
                                     >
-                                      <label className="text-xs font-medium text-gray-700 flex items-center gap-1 mb-1">
-                                        <span className="text-base">{location.icon}</span>
-                                        <span className="truncate">{location.label}</span>
-                                      </label>
+                                      <span className="text-sm">{location.icon}</span>
+                                      <span className="text-xs font-medium text-gray-700 min-w-[45px]">{location.label}</span>
                                       
-                                      {/* Case+Single Input Mode */}
+                                      {/* Case+Single Input Mode - Inline */}
                                       {showCaseMode && item.units_per_case > 1 ? (
-                                        <div className="space-y-1">
-                                          <div className="flex gap-1">
-                                            <div className="flex-1">
-                                              <Input
-                                                type="number"
-                                                inputMode="numeric"
-                                                min="0"
-                                                value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
-                                                onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
-                                                className="text-center font-bold h-10 text-base bg-white"
-                                                placeholder="0"
-                                              />
-                                              <div className="text-xs text-gray-500 text-center mt-0.5">cases</div>
-                                            </div>
-                                            <div className="flex-1">
-                                              <Input
-                                                type="number"
-                                                inputMode="numeric"
-                                                min="0"
-                                                value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
-                                                onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
-                                                className="text-center font-bold h-10 text-base bg-white"
-                                                placeholder="0"
-                                              />
-                                              <div className="text-xs text-gray-500 text-center mt-0.5">singles</div>
-                                            </div>
-                                          </div>
+                                        <div className="flex items-center gap-1 flex-1 justify-end">
+                                          <span className="text-xs text-gray-600">c:</span>
+                                          <Input
+                                            type="number"
+                                            inputMode="numeric"
+                                            min="0"
+                                            value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
+                                            onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
+                                            className="w-12 h-7 text-center font-bold text-sm bg-white px-1"
+                                            placeholder="0"
+                                          />
+                                          <span className="text-xs text-gray-600">s:</span>
+                                          <Input
+                                            type="number"
+                                            inputMode="numeric"
+                                            min="0"
+                                            value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
+                                            onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
+                                            className="w-12 h-7 text-center font-bold text-sm bg-white px-1"
+                                            placeholder="0"
+                                          />
                                         </div>
                                       ) : (
                                         /* Regular Single Input Mode */
@@ -1102,7 +1094,7 @@ function StockCounter() {
                                           min="0"
                                           value={count[location.key] || ''}
                                           onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                                          className="text-center font-bold h-10 text-base bg-white"
+                                          className="w-14 h-7 text-center font-bold text-sm bg-white ml-auto px-1"
                                           placeholder="0"
                                           data-testid={`count-input-${item.id}-${location.key}`}
                                         />
