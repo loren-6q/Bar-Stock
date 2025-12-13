@@ -1014,7 +1014,15 @@ function StockCounter() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="app-title">
             Bar Stock Manager
           </h1>
-          <p className="text-gray-600 text-sm">Track inventory across all locations • Case calculations included</p>
+          <p className="text-gray-600 text-sm mb-3">Track inventory across all locations • Case calculations included</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setPriceListOpen(true)}
+            className="text-xs"
+          >
+            💰 Price List
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
