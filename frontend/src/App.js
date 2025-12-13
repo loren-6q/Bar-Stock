@@ -1147,23 +1147,23 @@ function StockCounter() {
 
                               {/* Location Inputs - Compact inline layout */}
                               <div className="px-2 pb-2 pt-1">
-                                <div className="grid grid-cols-2 gap-1">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                                   {[
-                                    { key: 'main_bar', label: 'Main', icon: '🍺', bgClass: 'bg-orange-200 border-orange-300' },
-                                    { key: 'beer_bar', label: 'Beer', icon: '🍻', bgClass: 'bg-yellow-200 border-yellow-300' },
-                                    { key: 'lobby', label: 'Lobby', icon: '🏨', bgClass: 'bg-blue-200 border-blue-300' },
-                                    { key: 'storage_room', label: 'Storage', icon: '📦', bgClass: 'bg-green-200 border-green-300' }
+                                    { key: 'main_bar', label: 'Bar', bgClass: 'bg-orange-200 border-orange-300' },
+                                    { key: 'beer_bar', label: 'Beer', bgClass: 'bg-yellow-200 border-yellow-300' },
+                                    { key: 'lobby', label: 'Lobby', bgClass: 'bg-blue-200 border-blue-300' },
+                                    { key: 'storage_room', label: 'Storage', bgClass: 'bg-green-200 border-green-300' }
                                   ].map((location) => (
                                     <div 
                                       key={location.key} 
                                       className={`${location.bgClass} rounded px-1.5 py-1 border flex items-center`}
                                     >
-                                      <span className="text-xs mr-1">{location.icon}</span>
-                                      <span className="text-xs font-medium text-gray-700 w-10 truncate">{location.label}</span>
+                                      <span className="text-xs font-medium text-gray-700 w-12">{location.label}</span>
                                       
                                       {/* Case+Single Input Mode - Compact */}
                                       {showCaseMode && item.units_per_case > 1 ? (
                                         <div className="flex items-center gap-0.5 ml-auto">
+                                          <span className="text-xs">📦</span>
                                           <Input
                                             type="number"
                                             inputMode="numeric"
@@ -1173,7 +1173,7 @@ function StockCounter() {
                                             className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
                                             placeholder="0"
                                           />
-                                          <span className="text-[10px] text-gray-500">c</span>
+                                          <span className="text-xs">1️⃣</span>
                                           <Input
                                             type="number"
                                             inputMode="numeric"
@@ -1183,7 +1183,6 @@ function StockCounter() {
                                             className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
                                             placeholder="0"
                                           />
-                                          <span className="text-[10px] text-gray-500">s</span>
                                         </div>
                                       ) : (
                                         /* Regular Single Input Mode */
