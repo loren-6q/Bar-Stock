@@ -1792,6 +1792,102 @@ function StockCounter() {
           onOpenChange={setCopyDialogOpen}
         />
 
+        {/* Purchase Confirmation Dialog */}
+        <Dialog open={confirmPurchaseDialog} onOpenChange={setConfirmPurchaseDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Purchase from {currentOrder?.supplier}</DialogTitle>
+            </DialogHeader>
+            
+            {currentOrder && (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Adjust actual quantities and costs based on what you purchased. This will be saved to history for tracking.
+                </p>
+                
+                <div className="space-y-2">
+                  {currentOrder.items.map((item, idx) => {
+                    const useCases = item.ordered_cases > 0;
+                    return (
+                      <div key={idx} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm truncate block">{item.item_name}</span>
+                          <span className="text-xs text-gray-500">
+                            Ordered: {useCases ? `${item.ordered_cases} cases` : `${item.ordered_units} units`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-600">Got:</span>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              min="0"
+                              value={useCases ? item.actual_cases : item.actual_units}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                setCurrentOrder(prev => ({
+                                  ...prev,
+                                  items: prev.items.map((it, i) => 
+                                    i === idx ? {
+                                      ...it,
+                                      actual_cases: useCases ? val : it.actual_cases,
+                                      actual_units: useCases ? it.actual_units : val,
+                                      actual_cost: useCases 
+                                        ? val * (it.cost_per_case || it.cost_per_unit * (it.units_per_case || 1))
+                                        : val * it.cost_per_unit
+                                    } : it
+                                  )
+                                }));
+                              }}
+                              className="w-14 h-7 text-center font-bold text-sm"
+                            />
+                            <span className="text-xs">{useCases ? 'cases' : 'units'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-600">฿</span>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              min="0"
+                              value={item.actual_cost.toFixed(0)}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setCurrentOrder(prev => ({
+                                  ...prev,
+                                  items: prev.items.map((it, i) => 
+                                    i === idx ? { ...it, actual_cost: val } : it
+                                  )
+                                }));
+                              }}
+                              className="w-16 h-7 text-center font-bold text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="text-lg font-bold">
+                    Total: ฿{currentOrder.items.reduce((sum, it) => sum + it.actual_cost, 0).toFixed(0)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setConfirmPurchaseDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={confirmPurchase}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Save Purchase
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
       
