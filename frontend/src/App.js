@@ -338,6 +338,7 @@ function StockCounter() {
   const [pendingOrders, setPendingOrders] = useState([]); // Orders waiting for purchase confirmation
   const [confirmPurchaseDialog, setConfirmPurchaseDialog] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [priceListOpen, setPriceListOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
