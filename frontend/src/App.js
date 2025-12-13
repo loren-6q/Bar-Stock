@@ -1215,70 +1215,112 @@ function StockCounter() {
           <TabsContent value="shopping" className="space-y-3" data-testid="shopping-content">
             <div className="grid gap-3">
               {Object.entries(shoppingList).map(([supplier, items]) => {
-                const totalCost = getTotalCostBySupplier(items);
+                // Calculate total with adjustments
+                const totalCost = items.reduce((sum, item) => {
+                  const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
+                  const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
+                  if (item.case_calculation.cases_to_buy > 0 || adjCases > 0) {
+                    return sum + (adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1)));
+                  }
+                  return sum + (adjUnits * item.cost_per_unit);
+                }, 0);
                 const supplierColor = supplierColors[supplier] || supplierColors['Other'];
                 
                 return (
                   <Card key={supplier} className="shadow-sm" data-testid={`supplier-card-${supplier}`}>
-                    <CardHeader className={`${supplierColor} text-white rounded-t-lg py-3`}>
+                    <CardHeader className={`${supplierColor} text-white rounded-t-lg py-2 px-3`}>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base font-bold">{supplier}</CardTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-xs">
-                            ฿{totalCost.toFixed(2)}
+                            ฿{totalCost.toFixed(0)}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => createOrderFromShoppingList(supplier)}
-                            className="text-white hover:bg-white/20 h-6 px-2 text-xs"
-                            data-testid={`order-${supplier}`}
-                          >
-                            Order
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             onClick={() => showCopyDialog(supplier)}
-                            className="text-white hover:bg-white/20 h-7 w-7 p-0"
+                            className="text-white hover:bg-white/20 h-7 px-2 text-xs"
                             data-testid={`copy-${supplier}`}
                           >
-                            <Copy className="h-3 w-3" />
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => createPendingOrder(supplier)}
+                            className="h-7 px-2 text-xs bg-white text-gray-800 hover:bg-gray-100"
+                            data-testid={`confirm-${supplier}`}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Confirm Purchase
                           </Button>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
-                        {items.map((item, index) => (
-                          <div key={index} className="p-2 hover:bg-gray-50 transition-colors" data-testid={`shopping-item-${item.item_id}`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-xs">{item.item_name}</h4>
-                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
-                                  <span>Now: {item.current_stock}</span>
-                                  <span>Max: {item.max_stock}</span>
-                                  {item.case_calculation.cases_to_buy > 0 && (
-                                    <span className="flex items-center gap-1 text-blue-600">
-                                      <Calculator className="w-3 h-3" />
-                                      {item.case_calculation.display_text}
-                                    </span>
+                        {items.map((item, index) => {
+                          const useCases = item.case_calculation.cases_to_buy > 0;
+                          const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
+                          const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
+                          const itemCost = useCases 
+                            ? adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1))
+                            : adjUnits * item.cost_per_unit;
+                          
+                          return (
+                            <div key={index} className="px-3 py-2 hover:bg-gray-50 transition-colors" data-testid={`shopping-item-${item.item_id}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-gray-900 text-sm truncate">{item.item_name}</h4>
+                                  <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                    <span>Have: {item.current_stock}</span>
+                                    <span>→</span>
+                                    <span>Need: {item.max_stock}</span>
+                                    {useCases && (
+                                      <span className="text-gray-400">
+                                        ({item.units_per_case}/case)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {/* Editable quantity input */}
+                                  {useCases ? (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="number"
+                                        inputMode="numeric"
+                                        min="0"
+                                        value={adjCases}
+                                        onChange={(e) => updateOrderAdjustment(item.item_id, e.target.value, true)}
+                                        className="w-14 h-7 text-center font-bold text-sm"
+                                      />
+                                      <span className="text-xs text-gray-600">cases</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="number"
+                                        inputMode="numeric"
+                                        min="0"
+                                        value={adjUnits}
+                                        onChange={(e) => updateOrderAdjustment(item.item_id, e.target.value, false)}
+                                        className="w-14 h-7 text-center font-bold text-sm"
+                                      />
+                                      <span className="text-xs text-gray-600">units</span>
+                                    </div>
                                   )}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs font-bold text-green-600">
-                                  {item.case_calculation.cases_to_buy > 0 
-                                    ? `${item.case_calculation.cases_to_buy} cases` 
-                                    : `${item.need_to_buy_units} units`}
-                                </div>
-                                <div className="text-xs text-gray-600">
-                                  ฿{item.estimated_cost.toFixed(2)}
+                                  <div className="text-right min-w-[60px]">
+                                    <div className="text-xs font-bold text-green-600">
+                                      ฿{itemCost.toFixed(0)}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
