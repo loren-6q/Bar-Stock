@@ -1156,34 +1156,34 @@ function StockCounter() {
                                   ].map((location) => (
                                     <div 
                                       key={location.key} 
-                                      className={`${location.bgClass} rounded px-2 py-1.5 border flex items-center gap-1`}
+                                      className={`${location.bgClass} rounded px-1.5 py-1 border flex items-center`}
                                     >
-                                      <span className="text-sm">{location.icon}</span>
-                                      <span className="text-xs font-medium text-gray-700 min-w-[45px]">{location.label}</span>
+                                      <span className="text-xs mr-1">{location.icon}</span>
+                                      <span className="text-xs font-medium text-gray-700 w-10 truncate">{location.label}</span>
                                       
-                                      {/* Case+Single Input Mode - Inline */}
+                                      {/* Case+Single Input Mode - Compact */}
                                       {showCaseMode && item.units_per_case > 1 ? (
-                                        <div className="flex items-center gap-1 flex-1 justify-end">
-                                          <span className="text-xs text-gray-600">c:</span>
+                                        <div className="flex items-center gap-0.5 ml-auto">
                                           <Input
                                             type="number"
                                             inputMode="numeric"
                                             min="0"
                                             value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
                                             onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
-                                            className="w-12 h-7 text-center font-bold text-sm bg-white px-1"
+                                            className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
                                             placeholder="0"
                                           />
-                                          <span className="text-xs text-gray-600">s:</span>
+                                          <span className="text-[10px] text-gray-500">c</span>
                                           <Input
                                             type="number"
                                             inputMode="numeric"
                                             min="0"
                                             value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
                                             onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
-                                            className="w-12 h-7 text-center font-bold text-sm bg-white px-1"
+                                            className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
                                             placeholder="0"
                                           />
+                                          <span className="text-[10px] text-gray-500">s</span>
                                         </div>
                                       ) : (
                                         /* Regular Single Input Mode */
@@ -1193,7 +1193,7 @@ function StockCounter() {
                                           min="0"
                                           value={count[location.key] || ''}
                                           onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                                          className="w-14 h-7 text-center font-bold text-sm bg-white ml-auto px-1"
+                                          className="w-12 h-6 text-center font-bold text-xs bg-white ml-auto px-1"
                                           placeholder="0"
                                           data-testid={`count-input-${item.id}-${location.key}`}
                                         />
