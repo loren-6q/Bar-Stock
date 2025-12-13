@@ -630,7 +630,7 @@ function StockCounter() {
       await axios.put(`${API}/items/${itemId}`, {
         name: item.name,
         category: item.category,
-        category_name: item.category_name || 'Other Bar',
+        category_name: item.category_name || 'Bar Supplies',
         units_per_case: item.units_per_case || 1,
         min_stock: item.min_stock || 0,
         max_stock: item.max_stock || 0,
@@ -764,7 +764,7 @@ function StockCounter() {
         await axios.put(`${API}/items/${itemId}`, {
           name: item.name || 'Unnamed Item',
           category: item.category || 'O',
-          category_name: item.category_name || 'Other Bar',
+          category_name: item.category_name || 'Bar Supplies',
           units_per_case: parseInt(item.units_per_case) || 1,
           min_stock: parseInt(item.min_stock) || 0,
           max_stock: parseInt(item.max_stock) || 0,
