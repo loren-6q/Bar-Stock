@@ -334,6 +334,10 @@ function StockCounter() {
   const [newCategory, setNewCategory] = useState('');
   const [newSupplier, setNewSupplier] = useState('');
   const [editingItemId, setEditingItemId] = useState(null); // Track which item is being edited
+  const [orderAdjustments, setOrderAdjustments] = useState({}); // Editable order quantities
+  const [pendingOrders, setPendingOrders] = useState([]); // Orders waiting for purchase confirmation
+  const [confirmPurchaseDialog, setConfirmPurchaseDialog] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
