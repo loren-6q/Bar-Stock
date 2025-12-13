@@ -1072,7 +1072,7 @@ function StockCounter() {
                 }, {});
 
                 // Sort categories and items within each category
-                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Other Bar', 'Hostel Supplies'];
+                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
                 const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
                   const aIdx = categoryOrder.indexOf(a);
                   const bIdx = categoryOrder.indexOf(b);
