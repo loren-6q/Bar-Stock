@@ -1683,9 +1683,43 @@ function StockCounter() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4" data-testid="history-content">
+            {/* Saved Sessions List */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Stock History & Usage Reports</CardTitle>
+                <CardTitle className="text-base">📋 Saved Stock Sessions</CardTitle>
+                <p className="text-gray-600 text-sm">View details of past stock counts</p>
+              </CardHeader>
+              <CardContent>
+                {sessions.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-4">No saved sessions yet. Save a stock count session from the Count tab.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.slice(0, 10).map(session => (
+                      <div key={session.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div>
+                          <span className="font-medium text-sm">{session.session_name}</span>
+                          <span className="text-xs text-gray-500 ml-2">
+                            {new Date(session.session_date).toLocaleDateString()} {new Date(session.session_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => viewSessionDetails(session)}
+                          className="text-xs h-7"
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">📊 Usage Reports</CardTitle>
                 <p className="text-gray-600 text-sm">Compare stock sessions and track usage over time</p>
               </CardHeader>
               <CardContent>
