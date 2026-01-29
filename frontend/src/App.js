@@ -271,7 +271,7 @@ function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, cat
                 value={formData.cost_per_case}
                 onChange={(e) => setFormData({...formData, cost_per_case: parseFloat(e.target.value) || 0})}
                 placeholder={formData.units_per_case > 1 && formData.cost_per_unit > 0 ? 
-                  `Auto: ${(formData.cost_per_unit * formData.units_per_case).toFixed(2)}` : ''}
+                  `Auto: ${((parseFloat(formData.cost_per_unit) || 0) * (parseInt(formData.units_per_case) || 1)).toFixed(2)}` : ''}
               />
             </div>
           </div>
