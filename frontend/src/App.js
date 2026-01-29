@@ -1988,7 +1988,7 @@ function StockCounter() {
                           <div key={item.id} className="flex justify-between items-center py-0.5 border-b border-gray-100">
                             <span className="text-xs text-gray-700 truncate pr-2">{item.name}</span>
                             <span className="text-xs font-bold text-green-700 whitespace-nowrap">
-                              ฿{item.cost_per_unit?.toFixed(0) || '0'}
+                              ฿{(parseFloat(item.cost_per_unit) || 0).toFixed(0)}
                             </span>
                           </div>
                         ))}
