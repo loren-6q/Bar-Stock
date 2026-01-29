@@ -835,14 +835,33 @@ function StockCounter() {
     return orderAdjustments[key] !== undefined ? orderAdjustments[key] : originalQty;
   };
 
-  // Update order adjustment
+  // Update order adjustment and persist to localStorage
   const updateOrderAdjustment = (itemId, value, isCases = false) => {
     const key = isCases ? `${itemId}_cases` : `${itemId}_units`;
-    setOrderAdjustments(prev => ({
-      ...prev,
+    const newAdjustments = {
+      ...orderAdjustments,
       [key]: value === '' ? undefined : parseInt(value) || 0
-    }));
+    };
+    setOrderAdjustments(newAdjustments);
+    // Persist to localStorage
+    try {
+      localStorage.setItem('orderAdjustments', JSON.stringify(newAdjustments));
+    } catch (e) {
+      console.error('Error saving to localStorage:', e);
+    }
   };
+
+  // Load order adjustments from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('orderAdjustments');
+      if (saved) {
+        setOrderAdjustments(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error loading from localStorage:', e);
+    }
+  }, []);
 
   // Generate clean copy text with adjusted quantities
   const showCopyDialog = async (supplier) => {
