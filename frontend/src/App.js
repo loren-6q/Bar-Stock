@@ -339,6 +339,9 @@ function StockCounter() {
   const [confirmPurchaseDialog, setConfirmPurchaseDialog] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [priceListOpen, setPriceListOpen] = useState(false);
+  const [viewSessionDialog, setViewSessionDialog] = useState(false);
+  const [viewingSession, setViewingSession] = useState(null);
+  const [sessionCounts, setSessionCounts] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
