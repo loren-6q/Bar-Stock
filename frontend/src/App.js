@@ -712,27 +712,28 @@ function StockCounter() {
   // Live editing functions - save immediately on each change
   const handleLiveEdit = async (itemId, field, value) => {
     // Update local state immediately for responsive UI
-    let updatedItem = null;
-    
     setItems(prev => {
       const updatedItems = prev.map(item => {
         if (item.id !== itemId) return item;
         
         const newItem = { ...item, [field]: value };
         
-        // Auto-calculate costs if needed
-        if (field === 'cost_per_case' && newItem.units_per_case > 1 && parseFloat(value) > 0) {
-          newItem.cost_per_unit = (parseFloat(value) / newItem.units_per_case).toFixed(2);
-        } else if (field === 'cost_per_unit' && newItem.units_per_case > 1 && parseFloat(value) > 0) {
-          newItem.cost_per_case = (parseFloat(value) * newItem.units_per_case).toFixed(2);
-        } else if (field === 'units_per_case') {
+        // Auto-calculate costs if needed - with safety checks
+        const unitsPerCase = parseInt(newItem.units_per_case) || 1;
+        const costPerUnit = parseFloat(newItem.cost_per_unit) || 0;
+        const costPerCase = parseFloat(newItem.cost_per_case) || 0;
+        
+        if (field === 'cost_per_case' && unitsPerCase > 1 && parseFloat(value) > 0) {
+          newItem.cost_per_unit = (parseFloat(value) / unitsPerCase).toFixed(2);
+        } else if (field === 'cost_per_unit' && unitsPerCase > 1 && parseFloat(value) > 0) {
+          newItem.cost_per_case = (parseFloat(value) * unitsPerCase).toFixed(2);
+        } else if (field === 'units_per_case' && parseInt(value) > 0) {
           // Recalculate case cost when units per case changes
-          if (newItem.cost_per_unit && parseFloat(newItem.cost_per_unit) > 0) {
-            newItem.cost_per_case = (parseFloat(newItem.cost_per_unit) * parseInt(value)).toFixed(2);
+          if (costPerUnit > 0) {
+            newItem.cost_per_case = (costPerUnit * parseInt(value)).toFixed(2);
           }
         }
         
-        updatedItem = newItem;
         return newItem;
       });
       return updatedItems;
@@ -762,12 +763,20 @@ function StockCounter() {
         if (!item) return;
 
         // Update in database - ensure all required fields have valid values
-        await axios.put(`${API}/items/${itemId}`, {
+        const payload = {
           name: item.name || 'Unnamed Item',
           category: item.category || 'O',
           category_name: item.category_name || 'Bar Supplies',
           units_per_case: parseInt(item.units_per_case) || 1,
           min_stock: parseInt(item.min_stock) || 0,
+          max_stock: parseInt(item.max_stock) || 0,
+          primary_supplier: item.primary_supplier || 'Other',
+          cost_per_unit: parseFloat(item.cost_per_unit) || 0,
+          cost_per_case: parseFloat(item.cost_per_case) || 0,
+          bought_by_case: item.bought_by_case || false
+        };
+        
+        await axios.put(`${API}/items/${itemId}`, payload);
           max_stock: parseInt(item.max_stock) || 0,
           primary_supplier: item.primary_supplier || 'Other',
           cost_per_unit: parseFloat(item.cost_per_unit) || 0,
