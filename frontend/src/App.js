@@ -1987,6 +1987,90 @@ function StockCounter() {
           </DialogContent>
         </Dialog>
 
+        {/* View Session Details Dialog */}
+        <Dialog open={viewSessionDialog} onOpenChange={setViewSessionDialog}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                📋 {viewingSession?.session_name}
+              </DialogTitle>
+              <p className="text-sm text-gray-500">
+                {viewingSession && new Date(viewingSession.session_date).toLocaleString()}
+              </p>
+            </DialogHeader>
+            
+            {sessionCounts.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No count data saved for this session.</p>
+            ) : (
+              <div className="space-y-1">
+                {/* Group by category */}
+                {(() => {
+                  // Create a map of item_id to item for name lookup
+                  const itemMap = items.reduce((acc, item) => {
+                    acc[item.id] = item;
+                    return acc;
+                  }, {});
+                  
+                  // Group counts by category
+                  const grouped = sessionCounts.reduce((acc, count) => {
+                    const item = itemMap[count.item_id];
+                    const cat = item?.category_name || 'Other';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push({ ...count, item });
+                    return acc;
+                  }, {});
+                  
+                  const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
+                  const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                    const aIdx = categoryOrder.indexOf(a);
+                    const bIdx = categoryOrder.indexOf(b);
+                    if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
+                    if (aIdx === -1) return 1;
+                    if (bIdx === -1) return -1;
+                    return aIdx - bIdx;
+                  });
+                  
+                  return sortedCategories.map(category => (
+                    <div key={category}>
+                      <div className={`sticky top-0 z-10 px-2 py-1 rounded font-semibold text-xs mb-1 ${
+                        category === 'Beer' ? 'bg-amber-200 text-amber-900' :
+                        category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-200 text-red-900' :
+                        category === 'Mixers' ? 'bg-blue-200 text-blue-900' :
+                        category === 'Hostel Supplies' ? 'bg-purple-200 text-purple-900' :
+                        'bg-green-200 text-green-900'
+                      }`}>
+                        {category}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-2">
+                        {grouped[category]
+                          .sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || ''))
+                          .map(count => (
+                            <div key={count.item_id} className="flex items-center justify-between p-1.5 bg-gray-50 rounded text-xs">
+                              <span className="font-medium truncate flex-1">{count.item?.name || 'Unknown'}</span>
+                              <div className="flex gap-2 text-gray-600 shrink-0">
+                                <span className="bg-orange-100 px-1 rounded">Bar: {count.main_bar || 0}</span>
+                                <span className="bg-yellow-100 px-1 rounded">Beer: {count.beer_bar || 0}</span>
+                                <span className="bg-blue-100 px-1 rounded">Lobby: {count.lobby || 0}</span>
+                                <span className="bg-green-100 px-1 rounded">Stor: {count.storage_room || 0}</span>
+                                <span className="font-bold text-blue-700">=  {count.total_count || 0}</span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+            
+            <div className="pt-3 border-t flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setViewSessionDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
       
