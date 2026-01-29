@@ -777,12 +777,6 @@ function StockCounter() {
         };
         
         await axios.put(`${API}/items/${itemId}`, payload);
-          max_stock: parseInt(item.max_stock) || 0,
-          primary_supplier: item.primary_supplier || 'Other',
-          cost_per_unit: parseFloat(item.cost_per_unit) || 0,
-          cost_per_case: parseFloat(item.cost_per_case) || 0,
-          bought_by_case: item.bought_by_case || false
-        });
 
       } catch (error) {
         console.error('Error updating item:', error);
