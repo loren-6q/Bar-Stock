@@ -948,6 +948,7 @@ function StockCounter() {
       setConfirmPurchaseDialog(false);
       setCurrentOrder(null);
       setOrderAdjustments({}); // Reset adjustments
+      localStorage.removeItem('orderAdjustments'); // Clear from localStorage
       loadShoppingList(); // Refresh
     } catch (error) {
       console.error('Error saving purchase:', error);
