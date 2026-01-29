@@ -1803,36 +1803,6 @@ function StockCounter() {
                       </CardContent>
                     </Card>
                   )}
-
-                  {/* Sessions List */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Recent Sessions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {sessions.slice(0, 10).map(session => (
-                          <div key={session.id} className="flex items-center justify-between p-2 border rounded">
-                            <div>
-                              <div className="font-medium text-sm">{session.session_name}</div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(session.session_date).toLocaleString()} • {session.session_type}
-                                {session.is_active && <Badge className="ml-2 text-xs bg-green-100 text-green-800">Active</Badge>}
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => loadSessionPurchases(session.id)}
-                              className="text-xs"
-                            >
-                              View Purchases
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               </CardContent>
             </Card>
