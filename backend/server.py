@@ -525,6 +525,12 @@ async def get_stock_sessions():
     sessions = await db.stock_sessions.find().sort("session_date", -1).to_list(100)
     return [StockSession(**parse_from_mongo(session)) for session in sessions]
 
+@api_router.get("/stock-sessions/{session_id}/counts")
+async def get_session_counts(session_id: str):
+    """Get all stock counts saved for a specific session"""
+    counts = await db.historical_counts.find({"session_id": session_id}, {"_id": 0}).to_list(1000)
+    return counts
+
 @api_router.get("/stock-sessions/current", response_model=Optional[StockSession])
 async def get_current_session():
     session = await db.stock_sessions.find_one({"is_active": True})
