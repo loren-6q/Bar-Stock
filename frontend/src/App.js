@@ -530,6 +530,23 @@ function StockCounter() {
     }
   };
 
+  // View session details
+  const viewSessionDetails = async (session) => {
+    try {
+      const response = await axios.get(`${API}/stock-sessions/${session.id}/counts`);
+      setSessionCounts(response.data);
+      setViewingSession(session);
+      setViewSessionDialog(true);
+    } catch (error) {
+      console.error('Error loading session counts:', error);
+      toast({
+        title: "Error",
+        description: "Could not load session details",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateStockCount = async (itemId, location, value) => {
     try {
       const updateData = {};
