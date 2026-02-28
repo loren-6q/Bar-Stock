@@ -1,45 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Badge } from './components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Label } from './components/ui/label';
-import { Textarea } from './components/ui/textarea';
-import { Separator } from './components/ui/separator';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Copy, Package, Calculator, Edit, Plus, Trash2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, Plus, Trash2, Save, CheckCircle } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const categoryColors = {
-  'B': 'bg-amber-100 text-amber-800 border-amber-200',
-  'A': 'bg-red-100 text-red-800 border-red-200',
-  'M': 'bg-blue-100 text-blue-800 border-blue-200',
-  'O': 'bg-green-100 text-green-800 border-green-200',
-  'Z': 'bg-purple-100 text-purple-800 border-purple-200'
-};
-
-const supplierColors = {
-  'Singha99': 'bg-emerald-600',
-  'Makro': 'bg-orange-500',
-  'Local Market': 'bg-indigo-500',
-  'zBKK': 'bg-purple-600',
-  'Tesco': 'bg-blue-500',
-  'Other': 'bg-gray-500'
-};
-
-// Default categories and suppliers - can be extended by user
+// Categories and Suppliers
 const defaultCategories = [
   { value: 'B', label: 'Beer' },
   { value: 'A', label: 'Thai Alcohol' },
-  { value: 'A', label: 'Import Alcohol' },
+  { value: 'I', label: 'Import Alcohol' },
   { value: 'M', label: 'Mixers' },
   { value: 'O', label: 'Bar Supplies' },
   { value: 'Z', label: 'Hostel Supplies' }
@@ -49,1681 +30,530 @@ const defaultSuppliers = [
   'Singha99', 'Makro', 'Local Market', 'zBKK', 'Tesco', 'Big C', 'Vendor', 'Samui', 'Mr DIY', 'Supercheap', 'Lazada', 'Other'
 ];
 
-function CopyTextDialog({ text, supplier, open, onOpenChange }) {
-  const { toast } = useToast();
-  
-  const copyToClipboard = async () => {
-    try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        toast({
-          title: "Copied!",
-          description: `Order for ${supplier} copied to clipboard`,
-        });
-        onOpenChange(false);
-      } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.opacity = '0';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        
-        toast({
-          title: "Copied!",
-          description: `Order for ${supplier} copied to clipboard`,
-        });
-        onOpenChange(false);
-      }
-    } catch (error) {
-      console.error('Copy failed:', error);
-      // Final fallback - select the textarea for manual copying
-      const textArea = document.getElementById('copy-text-area');
-      if (textArea) {
-        textArea.select();
-        textArea.focus();
-        toast({
-          title: "Please copy manually",
-          description: "Text has been selected - press Ctrl+C to copy",
-          variant: "destructive",
-        });
-      }
-    }
-  };
+const categoryColors = {
+  'Beer': 'bg-amber-200 text-amber-900',
+  'Thai Alcohol': 'bg-red-200 text-red-900',
+  'Import Alcohol': 'bg-pink-200 text-pink-900',
+  'Mixers': 'bg-blue-200 text-blue-900',
+  'Bar Supplies': 'bg-green-200 text-green-900',
+  'Hostel Supplies': 'bg-purple-200 text-purple-900'
+};
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Copy Order for {supplier}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Textarea
-            id="copy-text-area"
-            value={text}
-            readOnly
-            className="min-h-[300px] font-mono text-sm"
-            data-testid="copy-text-area"
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
-            </Button>
-            <Button onClick={copyToClipboard} data-testid="copy-button">
-              <Copy className="w-4 h-4 mr-2" />
-              Copy to Clipboard
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+const supplierColors = {
+  'Singha99': 'bg-emerald-600',
+  'Makro': 'bg-orange-500',
+  'Local Market': 'bg-indigo-500',
+  'zBKK': 'bg-purple-600',
+  'Tesco': 'bg-blue-500',
+  'Big C': 'bg-red-500',
+  'Vendor': 'bg-gray-600',
+  'Samui': 'bg-cyan-500',
+  'Mr DIY': 'bg-yellow-600',
+  'Supercheap': 'bg-lime-600',
+  'Lazada': 'bg-orange-600',
+  'Other': 'bg-gray-500'
+};
 
-function ItemEditDialog({ item, isNew, onSave, onCancel, open, onOpenChange, categories, suppliers }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'B',
-    category_name: 'Beer',
-    units_per_case: 1,
-    min_stock: 0,
-    max_stock: 0,
-    primary_supplier: suppliers?.[0] || 'Singha99',
-    cost_per_unit: 0,
-    cost_per_case: 0,
-    bought_by_case: false
-  });
-
-  useEffect(() => {
-    if (item && !isNew) {
-      setFormData(item);
-    } else if (isNew) {
-      setFormData({
-        name: '',
-        category: 'B',
-        category_name: 'Beer',
-        units_per_case: 1,
-        min_stock: 0,
-        max_stock: 0,
-        primary_supplier: 'Singha99',
-        cost_per_unit: 0,
-        cost_per_case: 0,
-        bought_by_case: false
-      });
-    }
-  }, [item, isNew]);
-
-  const handleSave = () => {
-    // Auto-calculate cost per case if not provided
-    const dataToSave = { ...formData };
-    if (dataToSave.cost_per_case === 0 && dataToSave.cost_per_unit > 0 && dataToSave.units_per_case > 1) {
-      dataToSave.cost_per_case = dataToSave.cost_per_unit * dataToSave.units_per_case;
-    }
-    onSave(dataToSave);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isNew ? 'Add New Item' : 'Edit Item'}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Item Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="e.g. Big Chang, Vodka"
-              />
-            </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select value={formData.category_name} onValueChange={(value) => {
-                const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
-                setFormData({...formData, category: categoryMap[value] || 'O', category_name: value});
-              }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(categories || defaultCategories).map((cat, idx) => (
-                    <SelectItem key={idx} value={cat.label}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="units_per_case">Units per Case/Box</Label>
-              <Input
-                id="units_per_case"
-                type="number"
-                min="1"
-                value={formData.units_per_case}
-                onChange={(e) => setFormData({...formData, units_per_case: parseInt(e.target.value) || 1})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="min_stock">Min Stock</Label>
-              <Input
-                id="min_stock"
-                type="number"
-                min="0"
-                value={formData.min_stock}
-                onChange={(e) => setFormData({...formData, min_stock: parseInt(e.target.value) || 0})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="max_stock">Max Stock</Label>
-              <Input
-                id="max_stock"
-                type="number"
-                min="0"
-                value={formData.max_stock}
-                onChange={(e) => setFormData({...formData, max_stock: parseInt(e.target.value) || 0})}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="supplier">Primary Supplier</Label>
-            <Select value={formData.primary_supplier} onValueChange={(value) => setFormData({...formData, primary_supplier: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(suppliers || defaultSuppliers).map((supplier, idx) => (
-                  <SelectItem key={idx} value={supplier}>{supplier}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="cost_per_unit">Cost per Unit (฿)</Label>
-              <Input
-                id="cost_per_unit"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.cost_per_unit}
-                onChange={(e) => setFormData({...formData, cost_per_unit: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="cost_per_case">Cost per Case (฿)</Label>
-              <Input
-                id="cost_per_case"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.cost_per_case}
-                onChange={(e) => setFormData({...formData, cost_per_case: parseFloat(e.target.value) || 0})}
-                placeholder={formData.units_per_case > 1 && formData.cost_per_unit > 0 ? 
-                  `Auto: ${((parseFloat(formData.cost_per_unit) || 0) * (parseInt(formData.units_per_case) || 1)).toFixed(2)}` : ''}
-              />
-            </div>
-          </div>
-          
-          {/* Case purchasing checkbox */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="bought_by_case"
-              checked={formData.bought_by_case}
-              onChange={(e) => setFormData({...formData, bought_by_case: e.target.checked})}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <Label htmlFor="bought_by_case" className="text-sm">
-              Commonly bought by case (enables case + single input mode for stock counting)
-            </Label>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            <X className="w-4 h-4 mr-2" />
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            <Save className="w-4 h-4 mr-2" />
-            {isNew ? 'Add Item' : 'Save Changes'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function StockCounter() {
+function StockManager() {
+  const [activeTab, setActiveTab] = useState('count');
   const [items, setItems] = useState([]);
   const [stockCounts, setStockCounts] = useState({});
+  const [orderQtys, setOrderQtys] = useState({});
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('count');
-  const [shoppingList, setShoppingList] = useState({});
-  const [quickRestock, setQuickRestock] = useState([]);
+  
+  // Dialogs
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [isNewItem, setIsNewItem] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyText, setCopyText] = useState('');
-  const [copySupplier, setCopySupplier] = useState('');
-  const [currentSession, setCurrentSession] = useState(null);
-  const [sessions, setSessions] = useState([]);
-  const [selectedSessions, setSelectedSessions] = useState({ session1: '', session2: '' });
-  const [usageReport, setUsageReport] = useState(null);
-  const [purchases, setPurchases] = useState([]);
-  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
-  const [enhancedCounts, setEnhancedCounts] = useState({}); // For case/single inputs
-  const [showCaseInputs, setShowCaseInputs] = useState({}); // Which items to show case inputs for
-  const [sortBy, setSortBy] = useState('category'); // Sorting option
-  const [sortDirection, setSortDirection] = useState('asc'); // asc or desc
-  const [categories, setCategories] = useState(defaultCategories);
-  const [suppliers, setSuppliers] = useState(defaultSuppliers);
-  const [newCategory, setNewCategory] = useState('');
-  const [newSupplier, setNewSupplier] = useState('');
-  const [editingItemId, setEditingItemId] = useState(null); // Track which item is being edited
-  const [orderAdjustments, setOrderAdjustments] = useState({}); // Editable order quantities
-  const [pendingOrders, setPendingOrders] = useState([]); // Orders waiting for purchase confirmation
-  const [confirmPurchaseDialog, setConfirmPurchaseDialog] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState(null);
-  const [priceListOpen, setPriceListOpen] = useState(false);
-  const [viewSessionDialog, setViewSessionDialog] = useState(false);
-  const [viewingSession, setViewingSession] = useState(null);
-  const [sessionCounts, setSessionCounts] = useState([]);
+  
   const { toast } = useToast();
 
+  // Load data on mount
   useEffect(() => {
-    loadItems();
-    loadStockCounts();
-    loadCurrentSession();
+    loadData();
   }, []);
 
-  const loadItems = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API}/items`);
-      if (response.data.length === 0) {
-        // No items exist - show empty state, don't auto-initialize
-        setItems([]);
-        toast({
-          title: "No items found",
-          description: "Add items in the Manage tab to get started",
-        });
-      } else {
-        setItems(response.data);
-      }
-    } catch (error) {
-      console.error('Error loading items:', error);
-      // Don't wipe data on error! Just show error message
-      toast({
-        title: "Error loading items",
-        description: "Could not connect to server. Please refresh the page.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const initializeRealData = async () => {
-    // This function is now protected - requires manual confirmation
-    // It's kept for admin use but won't auto-trigger
-    const confirmed = window.confirm(
-      "⚠️ WARNING: This will DELETE ALL your items and stock counts!\n\n" +
-      "Your custom prices, items, and history will be PERMANENTLY LOST.\n\n" +
-      "Only use this to reset to default demo data.\n\n" +
-      "Are you SURE you want to continue?"
-    );
-    
-    if (!confirmed) {
-      toast({
-        title: "Cancelled",
-        description: "Your data was not changed",
-      });
-      return;
-    }
-    
-    try {
-      await axios.post(`${API}/initialize-real-data?confirm=YES_DELETE_ALL_DATA`);
-      const response = await axios.get(`${API}/items`);
-      setItems(response.data);
-      toast({
-        title: "Data reset complete",
-        description: "Default inventory data has been loaded",
-        variant: "destructive",
-      });
-    } catch (error) {
-      console.error('Error initializing real data:', error);
-      toast({
-        title: "Error",
-        description: "Could not reset data",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const loadStockCounts = async () => {
-    try {
-      const response = await axios.get(`${API}/stock-counts`);
+      const [itemsRes, countsRes, sessionsRes] = await Promise.all([
+        axios.get(`${API}/items`),
+        axios.get(`${API}/stock-counts`),
+        axios.get(`${API}/stock-sessions`)
+      ]);
+      
+      setItems(itemsRes.data);
+      
+      // Convert counts array to map
       const countsMap = {};
-      response.data.forEach(count => {
+      countsRes.data.forEach(count => {
         countsMap[count.item_id] = count;
       });
       setStockCounts(countsMap);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading stock counts:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadCurrentSession = async () => {
-    try {
-      const response = await axios.get(`${API}/stock-sessions/current`);
-      if (response.data) {
-        setCurrentSession(response.data);
+      setSessions(sessionsRes.data);
+      
+      // Load saved order quantities from localStorage
+      const savedOrders = localStorage.getItem('orderQtys');
+      if (savedOrders) {
+        setOrderQtys(JSON.parse(savedOrders));
       }
     } catch (error) {
-      console.error('Error loading current session:', error);
-    }
-  };
-
-  const saveStockCountSession = async () => {
-    // eslint-disable-next-line no-restricted-globals
-    const sessionName = prompt("Enter session name (e.g., 'Pre-Party Stock Count - October 3'):"); 
-    if (!sessionName) return;
-
-    try {
-      const sessionData = {
-        session_name: sessionName,
-        session_type: "full_count",
-        notes: `Stock count completed with ${Object.keys(stockCounts).length} items counted`
-      };
-      
-      const response = await axios.post(`${API}/stock-sessions`, sessionData);
-      setCurrentSession(response.data);
-      
-      // Save current counts to this session
-      await axios.post(`${API}/stock-sessions/${response.data.id}/save-counts`);
-      
+      console.error('Error loading data:', error);
       toast({
-        title: "Stock count saved!",
-        description: `Session "${sessionName}" has been saved to history`,
-      });
-      
-      // Refresh sessions list if on history tab
-      if (activeTab === 'history') {
-        loadSessions();
-      }
-    } catch (error) {
-      console.error('Error saving stock session:', error);
-      toast({
-        title: "Error saving session",
-        description: "Could not save stock count session",
+        title: "Connection Error",
+        description: "Could not load data. Please refresh.",
         variant: "destructive",
       });
     }
+    setLoading(false);
   };
 
-  const loadSessions = async () => {
-    try {
-      const response = await axios.get(`${API}/stock-sessions`);
-      setSessions(response.data);
-    } catch (error) {
-      console.error('Error loading sessions:', error);
-    }
-  };
-
-  const generateUsageReport = async () => {
-    if (!selectedSessions.session1 || !selectedSessions.session2) {
-      toast({
-        title: "Select sessions",
-        description: "Please select two sessions to compare",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await axios.get(`${API}/reports/session-comparison/${selectedSessions.session1}/${selectedSessions.session2}`);
-      setUsageReport(response.data);
-    } catch (error) {
-      console.error('Error generating report:', error);
-      toast({
-        title: "Error generating report",
-        description: "Could not generate usage report",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const loadSessionPurchases = async (sessionId) => {
-    try {
-      const response = await axios.get(`${API}/purchases/session/${sessionId}`);
-      setPurchases(response.data);
-    } catch (error) {
-      console.error('Error loading purchases:', error);
-    }
-  };
-
-  const confirmPurchases = async (shoppingListData) => {
-    // Open dialog to confirm actual purchases vs planned
-    setPurchaseDialogOpen(true);
-  };
-
-  // Order confirmation workflow functions
-  const createOrderFromShoppingList = async (supplier) => {
-    try {
-      const response = await axios.post(`${API}/shopping-list/create-order/${supplier}`, {
-        notes: `Order created for ${supplier} on ${new Date().toLocaleDateString()}`
-      });
-      
-      toast({
-        title: "Order Created!",
-        description: `Order for ${supplier} has been created and marked as pending`,
-      });
-      
-      // Refresh any order lists if needed
-      return response.data;
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast({
-        title: "Error creating order",
-        description: "Could not create order from shopping list",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateOrderStatus = async (orderId, status, notes = '') => {
-    try {
-      await axios.put(`${API}/shopping-orders/${orderId}/status?status=${status}&notes=${notes}`);
-      
-      toast({
-        title: "Order Updated",
-        description: `Order status changed to ${status}`,
-      });
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      toast({
-        title: "Error updating order",
-        description: "Could not update order status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // View session details
-  const viewSessionDetails = async (session) => {
-    try {
-      const response = await axios.get(`${API}/stock-sessions/${session.id}/counts`);
-      setSessionCounts(response.data);
-      setViewingSession(session);
-      setViewSessionDialog(true);
-    } catch (error) {
-      console.error('Error loading session counts:', error);
-      toast({
-        title: "Error",
-        description: "Could not load session details",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateStockCount = async (itemId, location, value) => {
-    try {
-      const updateData = {};
-      updateData[location] = parseInt(value) || 0;
-      
-      await axios.put(`${API}/stock-counts/${itemId}`, updateData);
-      
-      // Reload stock counts to get fresh data
-      loadStockCounts();
-
-      // Auto-save indication (no toast spam)
-    } catch (error) {
-      console.error('Error updating stock count:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update stock count",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateEnhancedStockCount = async (itemId, location, type, value) => {
+  // Update stock count
+  const updateCount = async (itemId, location, value) => {
     const numValue = parseInt(value) || 0;
-    
-    // Update local enhanced counts state
-    setEnhancedCounts(prev => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        [location]: {
-          ...prev[itemId]?.[location],
-          [type]: numValue // type is 'cases' or 'singles'
-        }
-      }
-    }));
-
-    // Calculate and send to backend if we have complete data for this item
-    const itemCounts = enhancedCounts[itemId] || {};
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-
     try {
-      // Build the stock inputs object
-      const stockInputs = {
-        main_bar: { 
-          cases: itemCounts.main_bar?.cases || 0, 
-          singles: itemCounts.main_bar?.singles || 0 
-        },
-        beer_bar: { 
-          cases: itemCounts.beer_bar?.cases || 0, 
-          singles: itemCounts.beer_bar?.singles || 0 
-        },
-        lobby: { 
-          cases: itemCounts.lobby?.cases || 0, 
-          singles: itemCounts.lobby?.singles || 0 
-        },
-        storage_room: { 
-          cases: itemCounts.storage_room?.cases || 0, 
-          singles: itemCounts.storage_room?.singles || 0 
-        },
-        counted_by: "Staff"
-      };
-
-      // Update the current location with the new value
-      stockInputs[location][type] = numValue;
-
-      const response = await axios.post(`${API}/stock-counts-enhanced/${itemId}`, stockInputs);
+      await axios.put(`${API}/stock-counts/${itemId}`, { [location]: numValue });
       
-      // Update the regular stock counts display with calculated totals
+      // Update local state
       setStockCounts(prev => ({
         ...prev,
-        [itemId]: response.data
-      }));
-
-    } catch (error) {
-      console.error('Error updating enhanced stock count:', error);
-    }
-  };
-
-  // Toggle case input mode and persist to database
-  const toggleCaseInput = async (itemId) => {
-    // Find the item
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-
-    // Toggle the bought_by_case field
-    const newBoughtByCase = !item.bought_by_case;
-    
-    // Update local state immediately
-    setItems(prev => prev.map(i => 
-      i.id === itemId ? { ...i, bought_by_case: newBoughtByCase } : i
-    ));
-
-    // Also update the showCaseInputs for immediate visual feedback
-    setShowCaseInputs(prev => ({
-      ...prev,
-      [itemId]: newBoughtByCase
-    }));
-
-    // Persist to database
-    try {
-      await axios.put(`${API}/items/${itemId}`, {
-        name: item.name,
-        category: item.category,
-        category_name: item.category_name || 'Bar Supplies',
-        units_per_case: item.units_per_case || 1,
-        min_stock: item.min_stock || 0,
-        max_stock: item.max_stock || 0,
-        primary_supplier: item.primary_supplier || 'Other',
-        cost_per_unit: item.cost_per_unit || 0,
-        cost_per_case: item.cost_per_case || 0,
-        bought_by_case: newBoughtByCase
-      });
-    } catch (error) {
-      console.error('Error updating case mode:', error);
-      // Revert on error
-      setItems(prev => prev.map(i => 
-        i.id === itemId ? { ...i, bought_by_case: !newBoughtByCase } : i
-      ));
-    }
-  };
-
-  // Enhanced sorting function with secondary sort by name within categories
-  const sortItems = (itemsToSort) => {
-    const sorted = [...itemsToSort].sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'category':
-          aValue = a.category_name || a.category;
-          bValue = b.category_name || b.category;
-          // Secondary sort by name within same category
-          if (aValue === bValue) {
-            return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
-          }
-          break;
-        case 'name':
-          aValue = a.name;
-          bValue = b.name;
-          break;
-        case 'supplier':
-          aValue = a.primary_supplier;
-          bValue = b.primary_supplier;
-          // Secondary sort by name within same supplier
-          if (aValue === bValue) {
-            return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
-          }
-          break;
-        case 'cost':
-          aValue = a.cost_per_unit || 0;
-          bValue = b.cost_per_unit || 0;
-          break;
-        default:
-          aValue = a.name;
-          bValue = b.name;
-      }
-      
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      if (sortDirection === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-    
-    return sorted;
-  };
-
-  // Toggle sort direction when clicking the same sort option
-  const handleSort = (newSortBy) => {
-    if (sortBy === newSortBy) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(newSortBy);
-      setSortDirection('asc');
-    }
-  };
-
-  // Live editing functions - save immediately on each change
-  const handleLiveEdit = async (itemId, field, value) => {
-    // Update local state immediately for responsive UI
-    setItems(prev => {
-      const updatedItems = prev.map(item => {
-        if (item.id !== itemId) return item;
-        
-        const newItem = { ...item, [field]: value };
-        
-        // Auto-calculate costs if needed - with safety checks
-        const unitsPerCase = parseInt(newItem.units_per_case) || 1;
-        const costPerUnit = parseFloat(newItem.cost_per_unit) || 0;
-        const costPerCase = parseFloat(newItem.cost_per_case) || 0;
-        
-        if (field === 'cost_per_case' && unitsPerCase > 1 && parseFloat(value) > 0) {
-          newItem.cost_per_unit = (parseFloat(value) / unitsPerCase).toFixed(2);
-        } else if (field === 'cost_per_unit' && unitsPerCase > 1 && parseFloat(value) > 0) {
-          newItem.cost_per_case = (parseFloat(value) * unitsPerCase).toFixed(2);
-        } else if (field === 'units_per_case' && parseInt(value) > 0) {
-          // Recalculate case cost when units per case changes
-          if (costPerUnit > 0) {
-            newItem.cost_per_case = (costPerUnit * parseInt(value)).toFixed(2);
-          }
+        [itemId]: {
+          ...prev[itemId],
+          [location]: numValue,
+          total_count: (location === 'main_bar' ? numValue : (prev[itemId]?.main_bar || 0)) +
+                       (location === 'beer_bar' ? numValue : (prev[itemId]?.beer_bar || 0)) +
+                       (location === 'lobby' ? numValue : (prev[itemId]?.lobby || 0)) +
+                       (location === 'storage_room' ? numValue : (prev[itemId]?.storage_room || 0))
         }
-        
-        return newItem;
+      }));
+    } catch (error) {
+      console.error('Error updating count:', error);
+    }
+  };
+
+  // Save session
+  const saveSession = async () => {
+    const sessionName = `Stock Count ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    try {
+      const sessionRes = await axios.post(`${API}/stock-sessions`, {
+        session_name: sessionName,
+        session_type: 'full_count'
       });
-      return updatedItems;
+      
+      await axios.post(`${API}/stock-sessions/${sessionRes.data.id}/save-counts`);
+      
+      toast({
+        title: "Session Saved!",
+        description: sessionName,
+      });
+      
+      loadData();
+      setActiveTab('inventory');
+    } catch (error) {
+      console.error('Error saving session:', error);
+      toast({
+        title: "Error",
+        description: "Could not save session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update order quantity
+  const updateOrderQty = (itemId, value) => {
+    const newQtys = { ...orderQtys, [itemId]: parseInt(value) || 0 };
+    setOrderQtys(newQtys);
+    localStorage.setItem('orderQtys', JSON.stringify(newQtys));
+  };
+
+  // Get total stock for an item
+  const getTotalStock = (itemId) => {
+    const count = stockCounts[itemId];
+    if (!count) return 0;
+    return (count.main_bar || 0) + (count.beer_bar || 0) + (count.lobby || 0) + (count.storage_room || 0);
+  };
+
+  // Get cases equivalent
+  const getCases = (units, unitsPerCase) => {
+    if (unitsPerCase <= 1) return null;
+    return (units / unitsPerCase).toFixed(1);
+  };
+
+  // Get suggested order quantity
+  const getSuggestedOrder = (item) => {
+    const have = getTotalStock(item.id);
+    const target = item.target_stock || item.max_stock || 0;
+    const need = Math.max(0, target - have);
+    if (item.units_per_case > 1) {
+      return Math.ceil(need / item.units_per_case);
+    }
+    return need;
+  };
+
+  // Generate orders by supplier
+  const generateOrders = () => {
+    const orders = {};
+    
+    items.forEach(item => {
+      const qty = orderQtys[item.id] !== undefined ? orderQtys[item.id] : getSuggestedOrder(item);
+      if (qty > 0) {
+        const supplier = item.primary_supplier || 'Other';
+        if (!orders[supplier]) orders[supplier] = [];
+        orders[supplier].push({
+          ...item,
+          orderQty: qty,
+          orderUnits: item.units_per_case > 1 ? qty * item.units_per_case : qty,
+          cost: item.units_per_case > 1 
+            ? qty * (parseFloat(item.cost_per_case) || parseFloat(item.cost_per_unit) * item.units_per_case)
+            : qty * parseFloat(item.cost_per_unit)
+        });
+      }
     });
     
-    // Mark this item as being edited (for input fields that should save on blur)
-    setEditingItemId(itemId);
+    return orders;
   };
 
-  // Save item changes on blur (when user leaves the field)
-  const handleSaveOnBlur = async (itemId) => {
-    // Clear editing state
-    setEditingItemId(null);
+  // Copy order list
+  const copyOrderList = (supplier, orderItems) => {
+    let text = `Order for ${supplier}:\n\n`;
+    let total = 0;
     
-    // Use a small delay to ensure state is updated
-    setTimeout(async () => {
-      try {
-        // Get the current item from the latest items state
-        const currentItems = await new Promise(resolve => {
-          setItems(prev => {
-            resolve(prev);
-            return prev;
-          });
-        });
-        
-        const item = currentItems.find(i => i.id === itemId);
-        if (!item) return;
-
-        // Update in database - ensure all required fields have valid values
-        const payload = {
-          name: item.name || 'Unnamed Item',
-          category: item.category || 'O',
-          category_name: item.category_name || 'Bar Supplies',
-          units_per_case: parseInt(item.units_per_case) || 1,
-          min_stock: parseInt(item.min_stock) || 0,
-          max_stock: parseInt(item.max_stock) || 0,
-          primary_supplier: item.primary_supplier || 'Other',
-          cost_per_unit: parseFloat(item.cost_per_unit) || 0,
-          cost_per_case: parseFloat(item.cost_per_case) || 0,
-          bought_by_case: item.bought_by_case || false
-        };
-        
-        await axios.put(`${API}/items/${itemId}`, payload);
-
-      } catch (error) {
-        console.error('Error updating item:', error);
-        toast({
-          title: "Error updating item",
-          description: "Could not save changes",
-          variant: "destructive",
-        });
-        // Reload items to get original values back
-        loadItems();
-      }
-    }, 50);
-  };
-
-  const loadShoppingList = async () => {
-    try {
-      const response = await axios.get(`${API}/shopping-list`);
-      setShoppingList(response.data);
-    } catch (error) {
-      console.error('Error loading shopping list:', error);
-    }
-  };
-
-  const loadQuickRestock = async () => {
-    try {
-      const response = await axios.get(`${API}/quick-restock`);
-      setQuickRestock(response.data);
-    } catch (error) {
-      console.error('Error loading quick restock:', error);
-    }
-  };
-
-  // Get adjusted quantity for an item (user override or original)
-  const getAdjustedQty = (itemId, originalQty, isCases = false) => {
-    const key = isCases ? `${itemId}_cases` : `${itemId}_units`;
-    return orderAdjustments[key] !== undefined ? orderAdjustments[key] : originalQty;
-  };
-
-  // Update order adjustment and persist to localStorage
-  const updateOrderAdjustment = (itemId, value, isCases = false) => {
-    const key = isCases ? `${itemId}_cases` : `${itemId}_units`;
-    const newAdjustments = {
-      ...orderAdjustments,
-      [key]: value === '' ? undefined : parseInt(value) || 0
-    };
-    setOrderAdjustments(newAdjustments);
-    // Persist to localStorage
-    try {
-      localStorage.setItem('orderAdjustments', JSON.stringify(newAdjustments));
-    } catch (e) {
-      console.error('Error saving to localStorage:', e);
-    }
-  };
-
-  // Load order adjustments from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('orderAdjustments');
-      if (saved) {
-        setOrderAdjustments(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error('Error loading from localStorage:', e);
-    }
-  }, []);
-
-  // Generate clean copy text with adjusted quantities
-  const showCopyDialog = async (supplier) => {
-    if (!shoppingList[supplier]) return;
+    orderItems.forEach(item => {
+      const unit = item.units_per_case > 1 ? 'cases' : 'units';
+      text += `• ${item.name}: ${item.orderQty} ${unit}\n`;
+      total += item.cost;
+    });
     
-    const items = shoppingList[supplier];
-    let textLines = [`Order for ${supplier}:`, ''];
-    let totalCost = 0;
+    text += `\nTotal: ฿${total.toFixed(0)}`;
     
-    for (const item of items) {
-      const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
-      const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
-      
-      // Calculate cost based on adjusted qty
-      let itemCost;
-      let qtyText;
-      
-      if (item.case_calculation.cases_to_buy > 0 || adjCases > 0) {
-        itemCost = adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1));
-        qtyText = `${adjCases} case${adjCases !== 1 ? 's' : ''}`;
-      } else {
-        itemCost = adjUnits * item.cost_per_unit;
-        qtyText = `${adjUnits} units`;
-      }
-      totalCost += itemCost;
-      
-      textLines.push(`• ${item.item_name}: ${qtyText}`);
-    }
-    
-    textLines.push('');
-    textLines.push(`Est. Total: ฿${totalCost.toFixed(0)}`);
-    
-    setCopyText(textLines.join('\n'));
-    setCopySupplier(supplier);
+    setCopyText(text);
     setCopyDialogOpen(true);
   };
 
-  // Create order with adjusted quantities for purchase confirmation
-  const createPendingOrder = (supplier) => {
-    if (!shoppingList[supplier]) return;
-    
-    const items = shoppingList[supplier].map(item => {
-      const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
-      const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
-      
-      return {
-        ...item,
-        ordered_cases: adjCases,
-        ordered_units: adjUnits,
-        actual_cases: adjCases, // Will be edited in confirmation
-        actual_units: adjUnits,
-        actual_cost: item.cost_per_case ? adjCases * item.cost_per_case : adjUnits * item.cost_per_unit
-      };
-    });
-    
-    const order = {
-      id: Date.now().toString(),
-      supplier,
-      created_at: new Date().toISOString(),
-      status: 'pending',
-      items
-    };
-    
-    setCurrentOrder(order);
-    setConfirmPurchaseDialog(true);
-  };
-
-  // Confirm purchase - save actual quantities and costs
-  const confirmPurchase = async () => {
-    if (!currentOrder) return;
-    
+  // Save item
+  const saveItem = async (itemData) => {
     try {
-      await axios.post(`${API}/orders`, {
-        ...currentOrder,
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      });
-      
-      toast({
-        title: "Purchase recorded!",
-        description: `Order from ${currentOrder.supplier} has been saved to history.`,
-      });
-      
-      setConfirmPurchaseDialog(false);
-      setCurrentOrder(null);
-      setOrderAdjustments({}); // Reset adjustments
-      localStorage.removeItem('orderAdjustments'); // Clear from localStorage
-      loadShoppingList(); // Refresh
-    } catch (error) {
-      console.error('Error saving purchase:', error);
-      toast({
-        title: "Error",
-        description: "Could not save purchase record",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEditItem = (item) => {
-    setEditingItem(item);
-    setIsNewItem(false);
-    setEditDialogOpen(true);
-  };
-
-  const handleAddItem = () => {
-    setEditingItem(null);
-    setIsNewItem(true);
-    setEditDialogOpen(true);
-  };
-
-  const handleSaveItem = async (itemData) => {
-    try {
-      if (isNewItem) {
-        await axios.post(`${API}/items`, itemData);
-        toast({
-          title: "Item added",
-          description: "New item added successfully",
-        });
-      } else {
+      if (editingItem?.id) {
         await axios.put(`${API}/items/${editingItem.id}`, itemData);
-        toast({
-          title: "Item updated",
-          description: "Item updated successfully",
-        });
+      } else {
+        await axios.post(`${API}/items`, itemData);
       }
-      
       setEditDialogOpen(false);
-      loadItems(); // Reload items
+      loadData();
+      toast({ title: "Item saved!" });
     } catch (error) {
       console.error('Error saving item:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save item",
-        variant: "destructive",
-      });
+      toast({ title: "Error saving item", variant: "destructive" });
     }
   };
 
-  const handleDeleteItem = async (item) => {
-    // eslint-disable-next-line no-restricted-globals
-    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      try {
-        await axios.delete(`${API}/items/${item.id}`);
-        toast({
-          title: "Item deleted",
-          description: "Item deleted successfully",
-        });
-        loadItems();
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete item",
-          variant: "destructive",
-        });
-      }
+  // Duplicate item
+  const duplicateItem = (item) => {
+    setEditingItem({
+      ...item,
+      id: null,
+      name: `${item.name} (copy)`
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Delete item
+  const deleteItem = async (itemId) => {
+    if (!window.confirm('Delete this item?')) return;
+    try {
+      await axios.delete(`${API}/items/${itemId}`);
+      loadData();
+      toast({ title: "Item deleted" });
+    } catch (error) {
+      toast({ title: "Error deleting item", variant: "destructive" });
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'shopping') {
-      loadShoppingList();
-    } else if (activeTab === 'quick') {
-      loadQuickRestock();
-    } else if (activeTab === 'history') {
-      loadSessions();
-    }
-  }, [activeTab]);
-
-  const getTotalCostBySupplier = (items) => {
-    return items.reduce((total, item) => total + item.estimated_cost, 0);
-  };
-
-  const getTotalItemsCounted = () => {
-    return Object.values(stockCounts).reduce((total, count) => total + count.total_count, 0);
+  // Group items by category and sub-category
+  const groupItems = (itemsList) => {
+    const groups = {};
+    itemsList.forEach(item => {
+      const cat = item.category_name || 'Other';
+      const sub = item.sub_category || '';
+      const key = sub ? `${cat} - ${sub}` : cat;
+      if (!groups[key]) groups[key] = { category: cat, subCategory: sub, items: [] };
+      groups[key].items.push(item);
+    });
+    
+    // Sort groups and items within groups
+    const sortedKeys = Object.keys(groups).sort();
+    sortedKeys.forEach(key => {
+      groups[key].items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
+    });
+    
+    return { groups, sortedKeys };
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading inventory system...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
 
+  const orders = generateOrders();
+  const { groups, sortedKeys } = groupItems(items);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-16">
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="app-title">
-            Bar Stock Manager
-          </h1>
-          <p className="text-gray-600 text-sm mb-3">Track inventory across all locations • Case calculations included</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setPriceListOpen(true)}
-            className="text-xs"
-          >
-            💰 Price List
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
+      <div className="container mx-auto px-2 sm:px-4 py-4">
+        {/* Header */}
+        <div className="mb-4 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bar Stock Manager</h1>
+          <p className="text-gray-600 text-xs sm:text-sm">{items.length} items tracked</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6" data-testid="main-tabs">
-            <TabsTrigger value="count" data-testid="count-tab" className="text-sm">Count</TabsTrigger>
-            <TabsTrigger value="shopping" data-testid="shopping-tab" className="text-sm">Shopping</TabsTrigger>
-            <TabsTrigger value="quick" data-testid="quick-tab" className="text-sm">Alerts</TabsTrigger>
-            <TabsTrigger value="manage" data-testid="manage-tab" className="text-sm">Manage</TabsTrigger>
-            <TabsTrigger value="history" data-testid="history-tab" className="text-sm">History</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 mb-4">
+            <TabsTrigger value="count" className="text-xs sm:text-sm">Count</TabsTrigger>
+            <TabsTrigger value="inventory" className="text-xs sm:text-sm">Inventory</TabsTrigger>
+            <TabsTrigger value="orders" className="text-xs sm:text-sm">Orders</TabsTrigger>
+            <TabsTrigger value="manage" className="text-xs sm:text-sm">Manage</TabsTrigger>
+            <TabsTrigger value="accounting" className="text-xs sm:text-sm">Accounting</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="count" className="space-y-4" data-testid="count-content">
-            {/* Stock Count Session Header - Mobile Optimized */}
+          {/* COUNT TAB */}
+          <TabsContent value="count" className="space-y-3">
             <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-blue-600 shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-blue-900 text-sm sm:text-base">Stock Count</h3>
-                      <p className="text-xs sm:text-sm text-blue-700">
-                        {currentSession ? 
-                          `Active: ${currentSession.session_name}` : 
-                          'Counts save automatically'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 justify-end">
-                    <Badge variant="outline" className="text-blue-700 border-blue-300 text-xs">
-                      {getTotalItemsCounted()} counted
-                    </Badge>
-                    <Button 
-                      onClick={saveStockCountSession}
-                      size="sm"
-                      className="h-8"
-                      data-testid="save-stock-session"
-                    >
-                      <Save className="w-4 h-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Save Session</span>
-                    </Button>
-                  </div>
+              <CardContent className="p-3 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-blue-900 text-sm">Stock Count</h3>
+                  <p className="text-xs text-blue-700">Enter counts by location</p>
                 </div>
+                <Button onClick={saveSession} size="sm">
+                  <Save className="w-4 h-4 mr-1" />
+                  Save & Continue
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Items grouped by category */}
-            <div className="space-y-4">
-              {(() => {
-                // Group items by category
-                const groupedItems = items.reduce((groups, item) => {
-                  const category = item.category_name || 'Other';
-                  if (!groups[category]) groups[category] = [];
-                  groups[category].push(item);
-                  return groups;
-                }, {});
-
-                // Sort categories and items within each category
-                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
-                const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
-                  const aIdx = categoryOrder.indexOf(a);
-                  const bIdx = categoryOrder.indexOf(b);
-                  if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
-                  if (aIdx === -1) return 1;
-                  if (bIdx === -1) return -1;
-                  return aIdx - bIdx;
-                });
-
-                return sortedCategories.map(category => (
-                  <div key={category} className="space-y-2">
-                    {/* Category Header */}
-                    <div className={`sticky top-0 z-10 px-3 py-2 rounded-lg font-semibold text-sm flex items-center justify-between ${
-                      category === 'Beer' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                      category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-100 text-red-800 border border-red-200' :
-                      category === 'Mixers' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                      category === 'Hostel Supplies' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                      'bg-green-100 text-green-800 border border-green-200'
-                    }`}>
-                      <span>{category}</span>
-                      <Badge variant="outline" className="text-xs">{groupedItems[category].length} items</Badge>
-                    </div>
-
-                    {/* Items in this category */}
-                    <div className="space-y-2">
-                      {groupedItems[category]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((item, itemIndex) => {
-                          const count = stockCounts[item.id] || { main_bar: 0, beer_bar: 0, lobby: 0, storage_room: 0, total_count: 0 };
-                          // Auto-show case inputs for items that are bought by case
-                          const showCaseMode = item.bought_by_case || showCaseInputs[item.id];
-                          
-                          return (
-                            <Card 
-                              key={item.id} 
-                              className={`shadow-sm transition-all duration-200 ${
-                                itemIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                              }`}
-                              data-testid={`item-card-${item.id}`}
-                            >
-                              {/* Item Header - Mobile Optimized */}
-                              <div className="px-3 py-2 border-b border-gray-100">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                    <span className="font-semibold text-sm truncate">{item.name}</span>
-                                    {item.units_per_case > 1 && (
-                                      <Badge variant="outline" className="text-xs shrink-0">
-                                        <Package className="w-3 h-3 mr-1" />
-                                        {item.units_per_case}/case
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    {item.units_per_case > 1 && (
-                                      <Button
-                                        variant={showCaseMode ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => toggleCaseInput(item.id)}
-                                        className="text-xs h-7 px-2"
-                                      >
-                                        {showCaseMode ? '📦' : '1️⃣'}
-                                      </Button>
-                                    )}
-                                    <div className="text-right min-w-[50px]">
-                                      <div className="text-lg font-bold text-blue-600" data-testid={`total-count-${item.id}`}>
-                                        {count.total_count}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Location Inputs - Compact inline layout */}
-                              <div className="px-2 pb-2 pt-1">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
-                                  {[
-                                    { key: 'main_bar', label: 'Bar', bgClass: 'bg-orange-200 border-orange-300' },
-                                    { key: 'beer_bar', label: 'Beer', bgClass: 'bg-yellow-200 border-yellow-300' },
-                                    { key: 'lobby', label: 'Lobby', bgClass: 'bg-blue-200 border-blue-300' },
-                                    { key: 'storage_room', label: 'Storage', bgClass: 'bg-green-200 border-green-300' }
-                                  ].map((location) => (
-                                    <div 
-                                      key={location.key} 
-                                      className={`${location.bgClass} rounded px-1.5 py-1 border flex items-center`}
-                                    >
-                                      <span className="text-xs font-medium text-gray-700 w-12">{location.label}</span>
-                                      
-                                      {/* Case+Single Input Mode - Compact */}
-                                      {showCaseMode && item.units_per_case > 1 ? (
-                                        <div className="flex items-center gap-0.5 ml-auto">
-                                          <span className="text-xs">📦</span>
-                                          <Input
-                                            type="number"
-                                            inputMode="numeric"
-                                            min="0"
-                                            value={enhancedCounts[item.id]?.[location.key]?.cases || ''}
-                                            onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'cases', e.target.value)}
-                                            className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
-                                            placeholder="0"
-                                          />
-                                          <span className="text-xs">1️⃣</span>
-                                          <Input
-                                            type="number"
-                                            inputMode="numeric"
-                                            min="0"
-                                            value={enhancedCounts[item.id]?.[location.key]?.singles || ''}
-                                            onChange={(e) => updateEnhancedStockCount(item.id, location.key, 'singles', e.target.value)}
-                                            className="w-8 h-6 text-center font-bold text-xs bg-white px-0.5"
-                                            placeholder="0"
-                                          />
-                                        </div>
-                                      ) : (
-                                        /* Regular Single Input Mode */
-                                        <Input
-                                          type="number"
-                                          inputMode="numeric"
-                                          min="0"
-                                          value={count[location.key] || ''}
-                                          onChange={(e) => updateStockCount(item.id, location.key, e.target.value)}
-                                          className="w-12 h-6 text-center font-bold text-xs bg-white ml-auto px-1"
-                                          placeholder="0"
-                                          data-testid={`count-input-${item.id}-${location.key}`}
-                                        />
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
+            {sortedKeys.map(groupKey => (
+              <div key={groupKey} className="space-y-1">
+                <div className={`sticky top-0 z-10 px-2 py-1 rounded text-xs font-semibold ${categoryColors[groups[groupKey].category] || 'bg-gray-200'}`}>
+                  {groupKey} ({groups[groupKey].items.length})
+                </div>
+                
+                {groups[groupKey].items.map(item => {
+                  const count = stockCounts[item.id] || {};
+                  const showCase = item.bought_by_case && item.units_per_case > 1;
+                  
+                  return (
+                    <Card key={item.id} className="shadow-sm">
+                      <div className="px-2 py-1.5 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{item.name}</span>
+                          {item.units_per_case > 1 && (
+                            <Badge variant="outline" className="text-xs">{item.units_per_case}/case</Badge>
+                          )}
+                        </div>
+                        <div className="text-lg font-bold text-blue-600">
+                          {getTotalStock(item.id)}
+                        </div>
+                      </div>
+                      <div className="p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1">
+                        {[
+                          { key: 'main_bar', label: 'Bar', bg: 'bg-orange-200' },
+                          { key: 'beer_bar', label: 'Beer', bg: 'bg-yellow-200' },
+                          { key: 'lobby', label: 'Lobby', bg: 'bg-blue-200' },
+                          { key: 'storage_room', label: 'Storage', bg: 'bg-green-200' }
+                        ].map(loc => (
+                          <div key={loc.key} className={`${loc.bg} rounded px-2 py-1 flex items-center`}>
+                            <span className="text-xs font-medium w-12">{loc.label}</span>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              min="0"
+                              value={count[loc.key] || ''}
+                              onChange={(e) => updateCount(item.id, loc.key, e.target.value)}
+                              className="w-14 h-6 text-center font-bold text-sm bg-white ml-auto"
+                              placeholder="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ))}
           </TabsContent>
 
-          <TabsContent value="shopping" className="space-y-3" data-testid="shopping-content">
-            <div className="grid gap-3">
-              {Object.entries(shoppingList).map(([supplier, items]) => {
-                // Calculate total with adjustments
-                const totalCost = items.reduce((sum, item) => {
-                  const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
-                  const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
-                  if (item.case_calculation.cases_to_buy > 0 || adjCases > 0) {
-                    return sum + (adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1)));
-                  }
-                  return sum + (adjUnits * item.cost_per_unit);
-                }, 0);
-                const supplierColor = supplierColors[supplier] || supplierColors['Other'];
+          {/* INVENTORY TAB */}
+          <TabsContent value="inventory" className="space-y-3">
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-3">
+                <h3 className="font-semibold text-green-900 text-sm">Full Inventory Overview</h3>
+                <p className="text-xs text-green-700">Review stock levels and set order quantities</p>
+              </CardContent>
+            </Card>
+
+            {/* Inventory Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="text-left p-2">Item</th>
+                    <th className="text-center p-2">Have</th>
+                    <th className="text-center p-2">Cases</th>
+                    <th className="text-center p-2">Target</th>
+                    <th className="text-center p-2">Need</th>
+                    <th className="text-center p-2 bg-blue-100">Order</th>
+                    <th className="text-left p-2">Vendor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedKeys.map(groupKey => (
+                    <React.Fragment key={groupKey}>
+                      <tr className={categoryColors[groups[groupKey].category] || 'bg-gray-200'}>
+                        <td colSpan={7} className="p-1 font-semibold text-xs">{groupKey}</td>
+                      </tr>
+                      {groups[groupKey].items.map(item => {
+                        const have = getTotalStock(item.id);
+                        const target = item.target_stock || item.max_stock || 0;
+                        const need = Math.max(0, target - have);
+                        const cases = getCases(have, item.units_per_case);
+                        const suggested = getSuggestedOrder(item);
+                        const orderQty = orderQtys[item.id] !== undefined ? orderQtys[item.id] : suggested;
+                        const isCase = item.units_per_case > 1;
+                        
+                        return (
+                          <tr key={item.id} className="border-b hover:bg-gray-50">
+                            <td className="p-2 font-medium">{item.name}</td>
+                            <td className={`p-2 text-center ${have < target * 0.25 ? 'text-red-600 font-bold' : ''}`}>{have}</td>
+                            <td className="p-2 text-center text-gray-500">{cases || '-'}</td>
+                            <td className="p-2 text-center">{target}</td>
+                            <td className="p-2 text-center">{need > 0 ? need : '-'}</td>
+                            <td className="p-2 text-center bg-blue-50">
+                              <Input
+                                type="number"
+                                min="0"
+                                value={orderQty}
+                                onChange={(e) => updateOrderQty(item.id, e.target.value)}
+                                className="w-14 h-6 text-center font-bold text-sm mx-auto"
+                              />
+                              <div className="text-[10px] text-gray-500">{isCase ? 'cases' : 'units'}</div>
+                            </td>
+                            <td className="p-2">
+                              <Badge className={`${supplierColors[item.primary_supplier] || 'bg-gray-500'} text-white text-xs`}>
+                                {item.primary_supplier}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Button onClick={() => setActiveTab('orders')} className="w-full">
+              Generate Orders →
+            </Button>
+          </TabsContent>
+
+          {/* ORDERS TAB */}
+          <TabsContent value="orders" className="space-y-3">
+            {Object.keys(orders).length === 0 ? (
+              <Card className="text-center py-8">
+                <CardContent>
+                  <p className="text-gray-500">No orders to place. Adjust quantities in Inventory tab.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              Object.entries(orders).map(([supplier, orderItems]) => {
+                const total = orderItems.reduce((sum, item) => sum + item.cost, 0);
                 
                 return (
-                  <Card key={supplier} className="shadow-sm" data-testid={`supplier-card-${supplier}`}>
-                    <CardHeader className={`${supplierColor} text-white rounded-t-lg py-2 px-3`}>
+                  <Card key={supplier}>
+                    <CardHeader className={`${supplierColors[supplier] || 'bg-gray-500'} text-white rounded-t-lg py-2 px-3`}>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-base font-bold">{supplier}</CardTitle>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-xs">
-                            ฿{totalCost.toFixed(0)}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => showCopyDialog(supplier)}
-                            className="text-white hover:bg-white/20 h-7 px-2 text-xs"
-                            data-testid={`copy-${supplier}`}
-                          >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Copy
-                          </Button>
+                        <CardTitle className="text-base">{supplier}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-white/20 text-white">฿{total.toFixed(0)}</Badge>
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => createPendingOrder(supplier)}
-                            className="h-7 px-2 text-xs bg-white text-gray-800 hover:bg-gray-100"
-                            data-testid={`confirm-${supplier}`}
+                            onClick={() => copyOrderList(supplier, orderItems)}
+                            className="h-7 text-xs"
                           >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Confirm Purchase
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copy
                           </Button>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="divide-y">
-                        {items.map((item, index) => {
-                          const useCases = item.case_calculation.cases_to_buy > 0;
-                          const adjCases = getAdjustedQty(item.item_id, item.case_calculation.cases_to_buy, true);
-                          const adjUnits = getAdjustedQty(item.item_id, item.need_to_buy_units, false);
-                          const itemCost = useCases 
-                            ? adjCases * (item.cost_per_case || item.cost_per_unit * (item.units_per_case || 1))
-                            : adjUnits * item.cost_per_unit;
-                          
-                          return (
-                            <div key={index} className="px-3 py-2 hover:bg-gray-50 transition-colors" data-testid={`shopping-item-${item.item_id}`}>
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-gray-900 text-sm truncate">{item.item_name}</h4>
-                                  <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                                    <span>Have: {item.current_stock}</span>
-                                    <span>→</span>
-                                    <span>Need: {item.max_stock}</span>
-                                    {useCases && (
-                                      <span className="text-gray-400">
-                                        ({item.units_per_case}/case)
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {/* Editable quantity input */}
-                                  {useCases ? (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        type="number"
-                                        inputMode="numeric"
-                                        min="0"
-                                        value={adjCases}
-                                        onChange={(e) => updateOrderAdjustment(item.item_id, e.target.value, true)}
-                                        className="w-14 h-7 text-center font-bold text-sm"
-                                      />
-                                      <span className="text-xs text-gray-600">cases</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        type="number"
-                                        inputMode="numeric"
-                                        min="0"
-                                        value={adjUnits}
-                                        onChange={(e) => updateOrderAdjustment(item.item_id, e.target.value, false)}
-                                        className="w-14 h-7 text-center font-bold text-sm"
-                                      />
-                                      <span className="text-xs text-gray-600">units</span>
-                                    </div>
-                                  )}
-                                  <div className="text-right min-w-[60px]">
-                                    <div className="text-xs font-bold text-green-600">
-                                      ฿{itemCost.toFixed(0)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                        {orderItems.map((item, idx) => (
+                          <div key={idx} className="px-3 py-2 flex justify-between items-center">
+                            <div>
+                              <span className="font-medium text-sm">{item.name}</span>
+                              {item.units_per_case > 1 && (
+                                <span className="text-xs text-gray-500 ml-2">({item.orderUnits} units)</span>
+                              )}
                             </div>
-                          );
-                        })}
+                            <div className="text-right">
+                              <span className="font-bold">{item.orderQty} {item.units_per_case > 1 ? 'cases' : 'units'}</span>
+                              <span className="text-xs text-gray-500 ml-2">฿{item.cost.toFixed(0)}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
                 );
-              })}
-              
-              {Object.keys(shoppingList).length === 0 && (
-                <Card className="text-center py-8" data-testid="no-shopping-items">
-                  <CardContent>
-                    <div className="text-4xl mb-4">✅</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">All Stocked Up!</h3>
-                    <p className="text-gray-600 text-sm">No items need restocking at the moment.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+              })
+            )}
+
+            <Button 
+              onClick={() => {
+                localStorage.removeItem('orderQtys');
+                setOrderQtys({});
+                toast({ title: "Order quantities cleared" });
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Clear All Orders
+            </Button>
           </TabsContent>
 
-          <TabsContent value="quick" className="space-y-4" data-testid="quick-content">
+          {/* MANAGE TAB */}
+          <TabsContent value="manage" className="space-y-3">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                  Low Stock Alert
-                </CardTitle>
-                <p className="text-gray-600 text-sm">Items below minimum stock levels</p>
+              <CardHeader className="py-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base">Manage Items</CardTitle>
+                <Button size="sm" onClick={() => { setEditingItem(null); setEditDialogOpen(true); }}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Item
+                </Button>
               </CardHeader>
-              <CardContent>
-                {quickRestock.length === 0 ? (
-                  <div className="text-center py-6">
-                    <div className="text-3xl mb-3">✅</div>
-                    <p className="text-gray-600 text-sm">All items are above minimum stock levels</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {quickRestock.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-red-50 border border-red-200 rounded-lg" data-testid={`low-stock-${item.item_id}`}>
-                        <div>
-                          <h4 className="font-medium text-gray-900 text-sm">{item.item_name}</h4>
-                          <p className="text-xs text-gray-600">{item.category} • {item.primary_supplier}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-red-600">
-                            {item.current_stock} / {item.min_stock} min
-                          </div>
-                          <div className="text-xs text-red-500">
-                            Need {item.min_stock - item.current_stock} more
-                          </div>
+              <CardContent className="p-0">
+                <div className="divide-y max-h-[60vh] overflow-y-auto">
+                  {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
+                    <div key={item.id} className="px-3 py-2 flex items-center justify-between hover:bg-gray-50">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{item.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {item.category_name} {item.sub_category && `• ${item.sub_category}`} • {item.primary_supplier} • ฿{parseFloat(item.cost_per_unit).toFixed(0)}/unit
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="manage" className="space-y-4" data-testid="manage-content">
-            {/* Manage Categories and Suppliers */}
-            <Card className="mb-4">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Manage Categories & Suppliers</CardTitle>
-                <p className="text-gray-600 text-sm">Add custom categories and suppliers</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Add Category */}
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <Label className="text-sm font-medium">Add New Category</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value)}
-                        placeholder="e.g. Wine, Spirits"
-                        className="h-8 text-sm"
-                      />
-                      <Button 
-                        type="button"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => {
-                          const trimmed = newCategory.trim();
-                          if (trimmed && !categories.find(c => c.label === trimmed)) {
-                            setCategories(prev => [...prev, { value: 'C', label: trimmed }]);
-                            setNewCategory('');
-                            toast({ title: "Category added", description: `"${trimmed}" added to categories` });
-                          }
-                        }}
-                        disabled={!newCategory.trim()}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {categories.map((cat, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">{cat.label}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Add Supplier */}
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <Label className="text-sm font-medium">Add New Supplier</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        value={newSupplier}
-                        onChange={(e) => setNewSupplier(e.target.value)}
-                        placeholder="e.g. New Vendor"
-                        className="h-8 text-sm"
-                      />
-                      <Button 
-                        type="button"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => {
-                          const trimmed = newSupplier.trim();
-                          if (trimmed && !suppliers.includes(trimmed)) {
-                            setSuppliers(prev => [...prev, trimmed]);
-                            setNewSupplier('');
-                            toast({ title: "Supplier added", description: `"${trimmed}" added to suppliers` });
-                          }
-                        }}
-                        disabled={!newSupplier.trim()}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {suppliers.map((sup, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">{sup}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Manage Items</CardTitle>
-                    <p className="text-gray-600 text-sm">Add, edit, or remove items from your inventory</p>
-                  </div>
-                  <Button onClick={handleAddItem} data-testid="add-item-btn" size="sm">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Item
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Sorting Controls */}
-                <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">Sort by:</span>
-                  <Button
-                    variant={sortBy === 'category' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleSort('category')}
-                    className="text-xs"
-                  >
-                    Category {sortBy === 'category' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </Button>
-                  <Button
-                    variant={sortBy === 'name' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleSort('name')}
-                    className="text-xs"
-                  >
-                    Name {sortBy === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </Button>
-                  <Button
-                    variant={sortBy === 'supplier' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleSort('supplier')}
-                    className="text-xs"
-                  >
-                    Supplier {sortBy === 'supplier' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </Button>
-                  <Button
-                    variant={sortBy === 'cost' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleSort('cost')}
-                    className="text-xs"
-                  >
-                    Cost {sortBy === 'cost' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </Button>
-                </div>
-
-                {/* Live Editable Items List */}
-                <div className="space-y-3">
-                  {sortItems(items).map(item => (
-                    <div key={item.id} className="grid grid-cols-12 gap-2 p-3 border rounded-lg hover:bg-gray-50" data-testid={`manage-item-${item.id}`}>
-                      {/* Name */}
-                      <div className="col-span-3">
-                        <Label className="text-xs text-gray-600">Name</Label>
-                        <Input
-                          value={item.name}
-                          onChange={(e) => handleLiveEdit(item.id, 'name', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Category */}
-                      <div className="col-span-2">
-                        <Label className="text-xs text-gray-600">Category</Label>
-                        <Select 
-                          value={item.category_name || ''} 
-                          onValueChange={(value) => {
-                            const categoryMap = { 'Beer': 'B', 'Thai Alcohol': 'A', 'Import Alcohol': 'A', 'Mixers': 'M', 'Bar Supplies': 'O', 'Hostel Supplies': 'Z' };
-                            handleLiveEdit(item.id, 'category_name', value);
-                            handleLiveEdit(item.id, 'category', categoryMap[value] || 'O');
-                            // Immediately save since select changes are final
-                            setTimeout(() => handleSaveOnBlur(item.id), 100);
-                          }}
-                        >
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat, idx) => (
-                              <SelectItem key={idx} value={cat.label}>{cat.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Units per Case */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Units/Case</Label>
-                        <Input
-                          type="number"
-                          value={item.units_per_case}
-                          onChange={(e) => handleLiveEdit(item.id, 'units_per_case', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Unit Cost */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Unit ฿</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.cost_per_unit}
-                          onChange={(e) => handleLiveEdit(item.id, 'cost_per_unit', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Case Cost */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Case ฿</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.cost_per_case || ''}
-                          onChange={(e) => handleLiveEdit(item.id, 'cost_per_case', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Min Stock */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Min</Label>
-                        <Input
-                          type="number"
-                          value={item.min_stock}
-                          onChange={(e) => handleLiveEdit(item.id, 'min_stock', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Max Stock */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Max</Label>
-                        <Input
-                          type="number"
-                          value={item.max_stock}
-                          onChange={(e) => handleLiveEdit(item.id, 'max_stock', e.target.value)}
-                          onBlur={() => handleSaveOnBlur(item.id)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-
-                      {/* Supplier */}
-                      <div className="col-span-1">
-                        <Label className="text-xs text-gray-600">Supplier</Label>
-                        <Select 
-                          value={item.primary_supplier || ''} 
-                          onValueChange={(value) => {
-                            handleLiveEdit(item.id, 'primary_supplier', value);
-                            // Immediately save since select changes are final
-                            setTimeout(() => handleSaveOnBlur(item.id), 100);
-                          }}
-                        >
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue placeholder="Select supplier" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {suppliers.map((sup, idx) => (
-                              <SelectItem key={idx} value={sup}>{sup}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Delete Button */}
-                      <div className="col-span-1 flex items-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteItem(item)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                          data-testid={`delete-item-${item.id}`}
-                        >
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingItem(item); setEditDialogOpen(true); }}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => duplicateItem(item)}>
+                          Dup
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-600" onClick={() => deleteItem(item.id)}>
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
@@ -1734,79 +564,41 @@ function StockCounter() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-4" data-testid="history-content">
-            {/* Saved Sessions List */}
+          {/* ACCOUNTING TAB */}
+          <TabsContent value="accounting" className="space-y-3">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">📋 Saved Stock Sessions</CardTitle>
-                <p className="text-gray-600 text-sm">View details of past stock counts</p>
+              <CardHeader className="py-3">
+                <CardTitle className="text-base">Usage & Cost Analysis</CardTitle>
+                <p className="text-xs text-gray-500">Compare sessions to track usage and spending</p>
               </CardHeader>
               <CardContent>
-                {sessions.length === 0 ? (
-                  <p className="text-gray-500 text-sm text-center py-4">No saved sessions yet. Save a stock count session from the Count tab.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {sessions.slice(0, 10).map(session => (
-                      <div key={session.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="font-medium text-sm">{session.session_name}</span>
-                          <span className="text-xs text-gray-500 ml-2">
-                            {new Date(session.session_date).toLocaleDateString()} {new Date(session.session_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </span>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => viewSessionDetails(session)}
-                          className="text-xs h-7"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">📊 Usage Reports</CardTitle>
-                <p className="text-gray-600 text-sm">Compare stock sessions and track usage over time</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Session Selection */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Compare From Session</Label>
-                      <Select value={selectedSessions.session1} onValueChange={(value) => 
-                        setSelectedSessions(prev => ({...prev, session1: value}))
-                      }>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select first session" />
+                      <Label className="text-xs">Opening Count (From)</Label>
+                      <Select>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Select session" />
                         </SelectTrigger>
                         <SelectContent>
-                          {sessions.map(session => (
-                            <SelectItem key={session.id} value={session.id}>
-                              {session.session_name} ({new Date(session.session_date).toLocaleDateString()})
+                          {sessions.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.session_name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>To Session</Label>
-                      <Select value={selectedSessions.session2} onValueChange={(value) => 
-                        setSelectedSessions(prev => ({...prev, session2: value}))
-                      }>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select second session" />
+                      <Label className="text-xs">Closing Count (To)</Label>
+                      <Select>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Select session" />
                         </SelectTrigger>
                         <SelectContent>
-                          {sessions.map(session => (
-                            <SelectItem key={session.id} value={session.id}>
-                              {session.session_name} ({new Date(session.session_date).toLocaleDateString()})
+                          {sessions.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.session_name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1814,46 +606,36 @@ function StockCounter() {
                     </div>
                   </div>
 
-                  <Button onClick={generateUsageReport} className="w-full">
-                    <Calculator className="w-4 h-4 mr-2" />
+                  <Button className="w-full" disabled>
                     Generate Usage Report
                   </Button>
 
-                  {/* Usage Report Display */}
-                  {usageReport && (
-                    <Card className="bg-slate-50">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm">
-                          Usage Report: {usageReport.session1_name} → {usageReport.session2_name}
-                        </CardTitle>
-                        <div className="flex gap-4 text-xs text-gray-600">
-                          <span>Period: {usageReport.period_days} days</span>
-                          <span>Total Cost: ฿{usageReport.total_usage_cost.toFixed(2)}</span>
+                  <p className="text-center text-gray-500 text-sm py-4">
+                    Usage reports coming soon.<br/>
+                    Will show: Opening stock + Purchases - Closing stock = Usage × Cost
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Saved Sessions */}
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-base">Saved Sessions</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y max-h-60 overflow-y-auto">
+                  {sessions.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4 text-sm">No saved sessions yet</p>
+                  ) : (
+                    sessions.map(session => (
+                      <div key={session.id} className="px-3 py-2">
+                        <div className="font-medium text-sm">{session.session_name}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(session.session_date).toLocaleString()}
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                          {usageReport.item_comparisons.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-white rounded border text-sm">
-                              <div className="flex-1">
-                                <div className="font-medium">{item.item_name}</div>
-                                <div className="text-xs text-gray-500">
-                                  Opening: {item.opening_stock} + Purchased: {item.purchases_made} - Closing: {item.closing_stock} = Used: {item.calculated_usage}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium text-red-600">
-                                  ฿{item.usage_cost.toFixed(2)}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  @ ฿{item.cost_per_unit}/unit
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    ))
                   )}
                 </div>
               </CardContent>
@@ -1861,279 +643,192 @@ function StockCounter() {
           </TabsContent>
         </Tabs>
 
-        <ItemEditDialog
-          item={editingItem}
-          isNew={isNewItem}
-          onSave={handleSaveItem}
-          onCancel={() => setEditDialogOpen(false)}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          categories={categories}
-          suppliers={suppliers}
-        />
-
-        <CopyTextDialog
-          text={copyText}
-          supplier={copySupplier}
-          open={copyDialogOpen}
-          onOpenChange={setCopyDialogOpen}
-        />
-
-        {/* Purchase Confirmation Dialog */}
-        <Dialog open={confirmPurchaseDialog} onOpenChange={setConfirmPurchaseDialog}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        {/* Edit Item Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Confirm Purchase from {currentOrder?.supplier}</DialogTitle>
+              <DialogTitle>{editingItem?.id ? 'Edit Item' : 'Add Item'}</DialogTitle>
             </DialogHeader>
-            
-            {currentOrder && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Adjust actual quantities and costs based on what you purchased. This will be saved to history for tracking.
-                </p>
-                
-                <div className="space-y-2">
-                  {currentOrder.items.map((item, idx) => {
-                    const useCases = item.ordered_cases > 0;
-                    return (
-                      <div key={idx} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-lg">
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-sm truncate block">{item.item_name}</span>
-                          <span className="text-xs text-gray-500">
-                            Ordered: {useCases ? `${item.ordered_cases} cases` : `${item.ordered_units} units`}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-600">Got:</span>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min="0"
-                              value={useCases ? item.actual_cases : item.actual_units}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setCurrentOrder(prev => ({
-                                  ...prev,
-                                  items: prev.items.map((it, i) => 
-                                    i === idx ? {
-                                      ...it,
-                                      actual_cases: useCases ? val : it.actual_cases,
-                                      actual_units: useCases ? it.actual_units : val,
-                                      actual_cost: useCases 
-                                        ? val * (it.cost_per_case || it.cost_per_unit * (it.units_per_case || 1))
-                                        : val * it.cost_per_unit
-                                    } : it
-                                  )
-                                }));
-                              }}
-                              className="w-14 h-7 text-center font-bold text-sm"
-                            />
-                            <span className="text-xs">{useCases ? 'cases' : 'units'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-600">฿</span>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min="0"
-                              value={item.actual_cost.toFixed(0)}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setCurrentOrder(prev => ({
-                                  ...prev,
-                                  items: prev.items.map((it, i) => 
-                                    i === idx ? { ...it, actual_cost: val } : it
-                                  )
-                                }));
-                              }}
-                              className="w-16 h-7 text-center font-bold text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="text-lg font-bold">
-                    Total: ฿{currentOrder.items.reduce((sum, it) => sum + it.actual_cost, 0).toFixed(0)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setConfirmPurchaseDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={confirmPurchase}>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Save Purchase
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <ItemForm
+              item={editingItem}
+              onSave={saveItem}
+              onCancel={() => setEditDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
 
-        {/* Price List Dialog */}
-        <Dialog open={priceListOpen} onOpenChange={setPriceListOpen}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        {/* Copy Dialog */}
+        <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>💰 Price List - Cost per Unit</DialogTitle>
+              <DialogTitle>Copy Order List</DialogTitle>
             </DialogHeader>
-            
-            <div className="space-y-4">
-              {(() => {
-                // Group items by category
-                const grouped = items.reduce((acc, item) => {
-                  const cat = item.category_name || 'Other';
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(item);
-                  return acc;
-                }, {});
-                
-                const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
-                const sortedCategories = Object.keys(grouped).sort((a, b) => {
-                  const aIdx = categoryOrder.indexOf(a);
-                  const bIdx = categoryOrder.indexOf(b);
-                  if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
-                  if (aIdx === -1) return 1;
-                  if (bIdx === -1) return -1;
-                  return aIdx - bIdx;
-                });
-                
-                return sortedCategories.map(category => (
-                  <div key={category}>
-                    <div className={`sticky top-0 z-10 px-2 py-1 rounded font-semibold text-xs mb-1 ${
-                      category === 'Beer' ? 'bg-amber-200 text-amber-900' :
-                      category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-200 text-red-900' :
-                      category === 'Mixers' ? 'bg-blue-200 text-blue-900' :
-                      category === 'Hostel Supplies' ? 'bg-purple-200 text-purple-900' :
-                      'bg-green-200 text-green-900'
-                    }`}>
-                      {category} ({grouped[category].length})
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-0.5 px-1">
-                      {grouped[category]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map(item => (
-                          <div key={item.id} className="flex justify-between items-center py-0.5 border-b border-gray-100">
-                            <span className="text-xs text-gray-700 truncate pr-2">{item.name}</span>
-                            <span className="text-xs font-bold text-green-700 whitespace-nowrap">
-                              ฿{(parseFloat(item.cost_per_unit) || 0).toFixed(0)}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-            
-            <div className="pt-3 border-t flex justify-between items-center text-xs text-gray-500">
-              <span>{items.length} items total</span>
-              <Button variant="outline" size="sm" onClick={() => setPriceListOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* View Session Details Dialog */}
-        <Dialog open={viewSessionDialog} onOpenChange={setViewSessionDialog}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                📋 {viewingSession?.session_name}
-              </DialogTitle>
-              <p className="text-sm text-gray-500">
-                {viewingSession && new Date(viewingSession.session_date).toLocaleString()}
-              </p>
-            </DialogHeader>
-            
-            {sessionCounts.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No count data saved for this session.</p>
-            ) : (
-              <div className="space-y-1">
-                {/* Group by category */}
-                {(() => {
-                  // Create a map of item_id to item for name lookup
-                  const itemMap = items.reduce((acc, item) => {
-                    acc[item.id] = item;
-                    return acc;
-                  }, {});
-                  
-                  // Group counts by category
-                  const grouped = sessionCounts.reduce((acc, count) => {
-                    const item = itemMap[count.item_id];
-                    const cat = item?.category_name || 'Other';
-                    if (!acc[cat]) acc[cat] = [];
-                    acc[cat].push({ ...count, item });
-                    return acc;
-                  }, {});
-                  
-                  const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
-                  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-                    const aIdx = categoryOrder.indexOf(a);
-                    const bIdx = categoryOrder.indexOf(b);
-                    if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
-                    if (aIdx === -1) return 1;
-                    if (bIdx === -1) return -1;
-                    return aIdx - bIdx;
-                  });
-                  
-                  return sortedCategories.map(category => (
-                    <div key={category}>
-                      <div className={`sticky top-0 z-10 px-2 py-1 rounded font-semibold text-xs mb-1 ${
-                        category === 'Beer' ? 'bg-amber-200 text-amber-900' :
-                        category === 'Thai Alcohol' || category === 'Import Alcohol' ? 'bg-red-200 text-red-900' :
-                        category === 'Mixers' ? 'bg-blue-200 text-blue-900' :
-                        category === 'Hostel Supplies' ? 'bg-purple-200 text-purple-900' :
-                        'bg-green-200 text-green-900'
-                      }`}>
-                        {category}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-2">
-                        {grouped[category]
-                          .sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || ''))
-                          .map(count => (
-                            <div key={count.item_id} className="flex items-center justify-between p-1.5 bg-gray-50 rounded text-xs">
-                              <span className="font-medium truncate flex-1">{count.item?.name || 'Unknown'}</span>
-                              <div className="flex gap-2 text-gray-600 shrink-0">
-                                <span className="bg-orange-100 px-1 rounded">Bar: {count.main_bar || 0}</span>
-                                <span className="bg-yellow-100 px-1 rounded">Beer: {count.beer_bar || 0}</span>
-                                <span className="bg-blue-100 px-1 rounded">Lobby: {count.lobby || 0}</span>
-                                <span className="bg-green-100 px-1 rounded">Stor: {count.storage_room || 0}</span>
-                                <span className="font-bold text-blue-700">=  {count.total_count || 0}</span>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </div>
-            )}
-            
-            <div className="pt-3 border-t flex justify-end">
-              <Button variant="outline" size="sm" onClick={() => setViewSessionDialog(false)}>
-                Close
-              </Button>
-            </div>
+            <pre className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">{copyText}</pre>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(copyText);
+              toast({ title: "Copied!" });
+              setCopyDialogOpen(false);
+            }}>
+              <Copy className="w-4 h-4 mr-2" /> Copy to Clipboard
+            </Button>
           </DialogContent>
         </Dialog>
 
         <Toaster />
       </div>
-      
-      {/* Bottom spacing for last input accessibility */}
-      <div className="h-24"></div>
     </div>
   );
 }
 
+// Item Form Component
+function ItemForm({ item, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    name: item?.name || '',
+    category: item?.category || 'B',
+    category_name: item?.category_name || 'Beer',
+    sub_category: item?.sub_category || '',
+    units_per_case: item?.units_per_case || 1,
+    target_stock: item?.target_stock || item?.max_stock || 0,
+    sort_order: item?.sort_order || 0,
+    primary_supplier: item?.primary_supplier || 'Makro',
+    cost_per_unit: item?.cost_per_unit || 0,
+    cost_per_case: item?.cost_per_case || 0,
+    bought_by_case: item?.bought_by_case || false
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div>
+        <Label className="text-xs">Name</Label>
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Category</Label>
+          <Select
+            value={form.category_name}
+            onValueChange={(val) => {
+              const cat = defaultCategories.find(c => c.label === val);
+              setForm({ ...form, category: cat?.value || 'O', category_name: val });
+            }}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {defaultCategories.map(c => (
+                <SelectItem key={c.label} value={c.label}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Sub-Category (optional)</Label>
+          <Input
+            value={form.sub_category}
+            onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
+            placeholder="e.g. Tequila, Vodka"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Units per Case</Label>
+          <Input
+            type="number"
+            min="1"
+            value={form.units_per_case}
+            onChange={(e) => setForm({ ...form, units_per_case: parseInt(e.target.value) || 1 })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Target Stock</Label>
+          <Input
+            type="number"
+            min="0"
+            value={form.target_stock}
+            onChange={(e) => setForm({ ...form, target_stock: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">Supplier</Label>
+        <Select
+          value={form.primary_supplier}
+          onValueChange={(val) => setForm({ ...form, primary_supplier: val })}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {defaultSuppliers.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Cost per Unit (฿)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.cost_per_unit}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value) || 0;
+              setForm({
+                ...form,
+                cost_per_unit: val,
+                cost_per_case: form.units_per_case > 1 ? val * form.units_per_case : val
+              });
+            }}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Cost per Case (฿)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.cost_per_case}
+            onChange={(e) => setForm({ ...form, cost_per_case: parseFloat(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="bought_by_case"
+          checked={form.bought_by_case}
+          onChange={(e) => setForm({ ...form, bought_by_case: e.target.checked })}
+          className="rounded"
+        />
+        <Label htmlFor="bought_by_case" className="text-xs">Usually bought by case</Label>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
+        <Button type="submit" className="flex-1">
+          <CheckCircle className="w-4 h-4 mr-1" /> Save
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function App() {
-  return <StockCounter />;
+  return <StockManager />;
 }
 
 export default App;
