@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './components/ui/label';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Copy, Plus, Trash2, Save, CheckCircle } from 'lucide-react';
+import { Copy, Plus, Trash2, Save, CheckCircle, Edit2, Package } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -58,15 +58,21 @@ function StockManager() {
   const [activeTab, setActiveTab] = useState('count');
   const [items, setItems] = useState([]);
   const [stockCounts, setStockCounts] = useState({});
+  const [localCounts, setLocalCounts] = useState({}); // Local state for inputs
   const [orderQtys, setOrderQtys] = useState({});
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [caseMode, setCaseMode] = useState({}); // Track case input mode per item
+  const [caseCounts, setCaseCounts] = useState({}); // cases + singles input
   
   // Dialogs
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyText, setCopyText] = useState('');
+  const [confirmPurchaseOpen, setConfirmPurchaseOpen] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  
+  // Manage tab filter
+  const [manageFilter, setManageFilter] = useState('');
   
   const { toast } = useToast();
 
@@ -88,17 +94,27 @@ function StockManager() {
       
       // Convert counts array to map
       const countsMap = {};
+      const localMap = {};
       countsRes.data.forEach(count => {
         countsMap[count.item_id] = count;
+        localMap[count.item_id] = {
+          main_bar: count.main_bar || 0,
+          beer_bar: count.beer_bar || 0,
+          lobby: count.lobby || 0,
+          storage_room: count.storage_room || 0
+        };
       });
       setStockCounts(countsMap);
+      setLocalCounts(localMap);
       setSessions(sessionsRes.data);
       
-      // Load saved order quantities from localStorage
-      const savedOrders = localStorage.getItem('orderQtys');
-      if (savedOrders) {
-        setOrderQtys(JSON.parse(savedOrders));
-      }
+      // Load saved order quantities and case modes from localStorage
+      try {
+        const savedOrders = localStorage.getItem('orderQtys');
+        if (savedOrders) setOrderQtys(JSON.parse(savedOrders));
+        const savedCaseModes = localStorage.getItem('caseModes');
+        if (savedCaseModes) setCaseMode(JSON.parse(savedCaseModes));
+      } catch (e) {}
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -110,26 +126,82 @@ function StockManager() {
     setLoading(false);
   };
 
-  // Update stock count
-  const updateCount = async (itemId, location, value) => {
-    const numValue = parseInt(value) || 0;
+  // Update local count (immediate, no API call)
+  const updateLocalCount = (itemId, location, value) => {
+    setLocalCounts(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [location]: value
+      }
+    }));
+  };
+
+  // Save count to server (on blur)
+  const saveCount = async (itemId, location) => {
+    const value = parseInt(localCounts[itemId]?.[location]) || 0;
     try {
-      await axios.put(`${API}/stock-counts/${itemId}`, { [location]: numValue });
+      await axios.put(`${API}/stock-counts/${itemId}`, { [location]: value });
       
-      // Update local state
+      // Update stockCounts state
+      setStockCounts(prev => {
+        const current = prev[itemId] || {};
+        return {
+          ...prev,
+          [itemId]: {
+            ...current,
+            [location]: value,
+            total_count: (location === 'main_bar' ? value : (current.main_bar || 0)) +
+                         (location === 'beer_bar' ? value : (current.beer_bar || 0)) +
+                         (location === 'lobby' ? value : (current.lobby || 0)) +
+                         (location === 'storage_room' ? value : (current.storage_room || 0))
+          }
+        };
+      });
+    } catch (error) {
+      console.error('Error saving count:', error);
+    }
+  };
+
+  // Toggle case mode for an item
+  const toggleCaseMode = (itemId) => {
+    const newMode = { ...caseMode, [itemId]: !caseMode[itemId] };
+    setCaseMode(newMode);
+    localStorage.setItem('caseModes', JSON.stringify(newMode));
+  };
+
+  // Update case/singles count
+  const updateCaseCount = (itemId, location, field, value) => {
+    setCaseCounts(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [location]: {
+          ...prev[itemId]?.[location],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  // Calculate total from cases + singles and save
+  const saveCaseCount = async (itemId, location, unitsPerCase) => {
+    const caseData = caseCounts[itemId]?.[location] || {};
+    const cases = parseInt(caseData.cases) || 0;
+    const singles = parseInt(caseData.singles) || 0;
+    const total = (cases * unitsPerCase) + singles;
+    
+    // Update local and save
+    updateLocalCount(itemId, location, total);
+    
+    try {
+      await axios.put(`${API}/stock-counts/${itemId}`, { [location]: total });
       setStockCounts(prev => ({
         ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          [location]: numValue,
-          total_count: (location === 'main_bar' ? numValue : (prev[itemId]?.main_bar || 0)) +
-                       (location === 'beer_bar' ? numValue : (prev[itemId]?.beer_bar || 0)) +
-                       (location === 'lobby' ? numValue : (prev[itemId]?.lobby || 0)) +
-                       (location === 'storage_room' ? numValue : (prev[itemId]?.storage_room || 0))
-        }
+        [itemId]: { ...prev[itemId], [location]: total }
       }));
     } catch (error) {
-      console.error('Error updating count:', error);
+      console.error('Error saving count:', error);
     }
   };
 
@@ -161,13 +233,6 @@ function StockManager() {
     }
   };
 
-  // Update order quantity
-  const updateOrderQty = (itemId, value) => {
-    const newQtys = { ...orderQtys, [itemId]: parseInt(value) || 0 };
-    setOrderQtys(newQtys);
-    localStorage.setItem('orderQtys', JSON.stringify(newQtys));
-  };
-
   // Get total stock for an item
   const getTotalStock = (itemId) => {
     const count = stockCounts[itemId];
@@ -181,15 +246,25 @@ function StockManager() {
     return (units / unitsPerCase).toFixed(1);
   };
 
+  // Get target stock (use target_stock or fall back to max_stock for old data)
+  const getTarget = (item) => item.target_stock || item.max_stock || 0;
+
   // Get suggested order quantity
   const getSuggestedOrder = (item) => {
     const have = getTotalStock(item.id);
-    const target = item.target_stock || item.max_stock || 0;
+    const target = getTarget(item);
     const need = Math.max(0, target - have);
-    if (item.units_per_case > 1) {
+    if (item.units_per_case > 1 && item.bought_by_case) {
       return Math.ceil(need / item.units_per_case);
     }
     return need;
+  };
+
+  // Update order quantity
+  const updateOrderQty = (itemId, value) => {
+    const newQtys = { ...orderQtys, [itemId]: value };
+    setOrderQtys(newQtys);
+    localStorage.setItem('orderQtys', JSON.stringify(newQtys));
   };
 
   // Generate orders by supplier
@@ -197,15 +272,18 @@ function StockManager() {
     const orders = {};
     
     items.forEach(item => {
-      const qty = orderQtys[item.id] !== undefined ? orderQtys[item.id] : getSuggestedOrder(item);
+      const suggested = getSuggestedOrder(item);
+      const qty = orderQtys[item.id] !== undefined ? parseInt(orderQtys[item.id]) || 0 : suggested;
       if (qty > 0) {
         const supplier = item.primary_supplier || 'Other';
         if (!orders[supplier]) orders[supplier] = [];
+        const isCase = item.units_per_case > 1 && item.bought_by_case;
         orders[supplier].push({
           ...item,
           orderQty: qty,
-          orderUnits: item.units_per_case > 1 ? qty * item.units_per_case : qty,
-          cost: item.units_per_case > 1 
+          orderUnits: isCase ? qty * item.units_per_case : qty,
+          isCase,
+          cost: isCase 
             ? qty * (parseFloat(item.cost_per_case) || parseFloat(item.cost_per_unit) * item.units_per_case)
             : qty * parseFloat(item.cost_per_unit)
         });
@@ -221,7 +299,7 @@ function StockManager() {
     let total = 0;
     
     orderItems.forEach(item => {
-      const unit = item.units_per_case > 1 ? 'cases' : 'units';
+      const unit = item.isCase ? 'cases' : 'units';
       text += `• ${item.name}: ${item.orderQty} ${unit}\n`;
       total += item.cost;
     });
@@ -232,31 +310,108 @@ function StockManager() {
     setCopyDialogOpen(true);
   };
 
-  // Save item
-  const saveItem = async (itemData) => {
+  // Confirm purchase - opens dialog with editable quantities
+  const startConfirmPurchase = (supplier, orderItems) => {
+    setCurrentOrder({
+      supplier,
+      items: orderItems.map(item => ({
+        ...item,
+        actualQty: item.orderQty,
+        actualCost: item.cost
+      }))
+    });
+    setConfirmPurchaseOpen(true);
+  };
+
+  // Save confirmed purchase
+  const savePurchase = async () => {
+    if (!currentOrder) return;
+    
     try {
-      if (editingItem?.id) {
-        await axios.put(`${API}/items/${editingItem.id}`, itemData);
-      } else {
-        await axios.post(`${API}/items`, itemData);
+      await axios.post(`${API}/orders`, {
+        id: Date.now().toString(),
+        supplier: currentOrder.supplier,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        items: currentOrder.items
+      });
+      
+      toast({ title: "Purchase recorded!", description: `Order from ${currentOrder.supplier} saved.` });
+      setConfirmPurchaseOpen(false);
+      setCurrentOrder(null);
+      
+      // Clear order quantities for this supplier
+      const newQtys = { ...orderQtys };
+      currentOrder.items.forEach(item => delete newQtys[item.id]);
+      setOrderQtys(newQtys);
+      localStorage.setItem('orderQtys', JSON.stringify(newQtys));
+    } catch (error) {
+      toast({ title: "Error saving purchase", variant: "destructive" });
+    }
+  };
+
+  // Save item (inline edit)
+  const saveItem = async (itemId, updates) => {
+    try {
+      const item = items.find(i => i.id === itemId);
+      const payload = { ...item, ...updates };
+      
+      // Auto-calculate costs
+      if (updates.cost_per_unit !== undefined && payload.units_per_case > 1) {
+        payload.cost_per_case = parseFloat(updates.cost_per_unit) * payload.units_per_case;
+      } else if (updates.cost_per_case !== undefined && payload.units_per_case > 1) {
+        payload.cost_per_unit = parseFloat(updates.cost_per_case) / payload.units_per_case;
       }
-      setEditDialogOpen(false);
-      loadData();
-      toast({ title: "Item saved!" });
+      
+      await axios.put(`${API}/items/${itemId}`, payload);
+      
+      // Update local state
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...payload } : i));
     } catch (error) {
       console.error('Error saving item:', error);
-      toast({ title: "Error saving item", variant: "destructive" });
+      toast({ title: "Error saving", variant: "destructive" });
+    }
+  };
+
+  // Add new item
+  const addItem = async () => {
+    const newItem = {
+      name: 'New Item',
+      category: 'O',
+      category_name: 'Bar Supplies',
+      sub_category: '',
+      units_per_case: 1,
+      target_stock: 0,
+      primary_supplier: 'Makro',
+      cost_per_unit: 0,
+      cost_per_case: 0,
+      bought_by_case: false
+    };
+    
+    try {
+      const res = await axios.post(`${API}/items`, newItem);
+      setItems(prev => [...prev, res.data]);
+      toast({ title: "Item added" });
+    } catch (error) {
+      toast({ title: "Error adding item", variant: "destructive" });
     }
   };
 
   // Duplicate item
-  const duplicateItem = (item) => {
-    setEditingItem({
+  const duplicateItem = async (item) => {
+    const newItem = {
       ...item,
-      id: null,
       name: `${item.name} (copy)`
-    });
-    setEditDialogOpen(true);
+    };
+    delete newItem.id;
+    
+    try {
+      const res = await axios.post(`${API}/items`, newItem);
+      setItems(prev => [...prev, res.data]);
+      toast({ title: "Item duplicated" });
+    } catch (error) {
+      toast({ title: "Error duplicating", variant: "destructive" });
+    }
   };
 
   // Delete item
@@ -264,14 +419,14 @@ function StockManager() {
     if (!window.confirm('Delete this item?')) return;
     try {
       await axios.delete(`${API}/items/${itemId}`);
-      loadData();
+      setItems(prev => prev.filter(i => i.id !== itemId));
       toast({ title: "Item deleted" });
     } catch (error) {
-      toast({ title: "Error deleting item", variant: "destructive" });
+      toast({ title: "Error deleting", variant: "destructive" });
     }
   };
 
-  // Group items by category and sub-category
+  // Group items by category and sub-category for display
   const groupItems = (itemsList) => {
     const groups = {};
     itemsList.forEach(item => {
@@ -282,10 +437,20 @@ function StockManager() {
       groups[key].items.push(item);
     });
     
-    // Sort groups and items within groups
-    const sortedKeys = Object.keys(groups).sort();
+    // Sort groups by category then sub-category
+    const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const catA = groups[a].category;
+      const catB = groups[b].category;
+      const idxA = categoryOrder.indexOf(catA);
+      const idxB = categoryOrder.indexOf(catB);
+      if (idxA !== idxB) return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+      return a.localeCompare(b);
+    });
+    
+    // Sort items within groups alphabetically
     sortedKeys.forEach(key => {
-      groups[key].items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
+      groups[key].items.sort((a, b) => a.name.localeCompare(b.name));
     });
     
     return { groups, sortedKeys };
@@ -302,13 +467,25 @@ function StockManager() {
   const orders = generateOrders();
   const { groups, sortedKeys } = groupItems(items);
 
+  // Filter items for manage tab
+  const filteredItems = manageFilter 
+    ? items.filter(i => 
+        i.name.toLowerCase().includes(manageFilter.toLowerCase()) ||
+        i.category_name?.toLowerCase().includes(manageFilter.toLowerCase()) ||
+        i.sub_category?.toLowerCase().includes(manageFilter.toLowerCase()) ||
+        i.primary_supplier?.toLowerCase().includes(manageFilter.toLowerCase())
+      )
+    : items;
+  
+  const { groups: manageGroups, sortedKeys: manageSortedKeys } = groupItems(filteredItems);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
-      <div className="container mx-auto px-2 sm:px-4 py-4">
+      <div className="container mx-auto px-2 sm:px-4 py-4 max-w-6xl">
         {/* Header */}
         <div className="mb-4 text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bar Stock Manager</h1>
-          <p className="text-gray-600 text-xs sm:text-sm">{items.length} items tracked</p>
+          <p className="text-gray-600 text-xs sm:text-sm">{items.length} items</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -320,7 +497,7 @@ function StockManager() {
             <TabsTrigger value="accounting" className="text-xs sm:text-sm">Accounting</TabsTrigger>
           </TabsList>
 
-          {/* COUNT TAB */}
+          {/* ==================== COUNT TAB ==================== */}
           <TabsContent value="count" className="space-y-3">
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-3 flex items-center justify-between">
@@ -342,22 +519,38 @@ function StockManager() {
                 </div>
                 
                 {groups[groupKey].items.map(item => {
-                  const count = stockCounts[item.id] || {};
-                  const showCase = item.bought_by_case && item.units_per_case > 1;
+                  const showCaseInput = caseMode[item.id] && item.units_per_case > 1;
+                  const localCount = localCounts[item.id] || {};
                   
                   return (
                     <Card key={item.id} className="shadow-sm">
-                      <div className="px-2 py-1.5 border-b flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{item.name}</span>
+                      {/* Item Header */}
+                      <div className="px-2 py-1.5 border-b flex items-center justify-between bg-gray-50">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="font-medium text-sm truncate">{item.name}</span>
                           {item.units_per_case > 1 && (
-                            <Badge variant="outline" className="text-xs">{item.units_per_case}/case</Badge>
+                            <Badge variant="outline" className="text-xs shrink-0">{item.units_per_case}/case</Badge>
                           )}
                         </div>
-                        <div className="text-lg font-bold text-blue-600">
-                          {getTotalStock(item.id)}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {item.units_per_case > 1 && (
+                            <Button
+                              variant={showCaseInput ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleCaseMode(item.id)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <Package className="w-3 h-3 mr-1" />
+                              {showCaseInput ? 'Cases' : 'Units'}
+                            </Button>
+                          )}
+                          <div className="text-lg font-bold text-blue-600 min-w-[40px] text-right">
+                            {getTotalStock(item.id)}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Location Inputs */}
                       <div className="p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1">
                         {[
                           { key: 'main_bar', label: 'Bar', bg: 'bg-orange-200' },
@@ -365,17 +558,52 @@ function StockManager() {
                           { key: 'lobby', label: 'Lobby', bg: 'bg-blue-200' },
                           { key: 'storage_room', label: 'Storage', bg: 'bg-green-200' }
                         ].map(loc => (
-                          <div key={loc.key} className={`${loc.bg} rounded px-2 py-1 flex items-center`}>
-                            <span className="text-xs font-medium w-12">{loc.label}</span>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min="0"
-                              value={count[loc.key] || ''}
-                              onChange={(e) => updateCount(item.id, loc.key, e.target.value)}
-                              className="w-14 h-6 text-center font-bold text-sm bg-white ml-auto"
-                              placeholder="0"
-                            />
+                          <div key={loc.key} className={`${loc.bg} rounded px-2 py-1`}>
+                            <div className="text-xs font-medium mb-1">{loc.label}</div>
+                            
+                            {showCaseInput ? (
+                              // Case + Singles mode
+                              <div className="flex gap-1">
+                                <div className="flex-1">
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min="0"
+                                    value={caseCounts[item.id]?.[loc.key]?.cases ?? ''}
+                                    onChange={(e) => updateCaseCount(item.id, loc.key, 'cases', e.target.value)}
+                                    onBlur={() => saveCaseCount(item.id, loc.key, item.units_per_case)}
+                                    className="w-full h-7 text-center font-bold text-sm bg-white rounded border px-1"
+                                    placeholder="0"
+                                  />
+                                  <div className="text-[10px] text-center text-gray-600">📦</div>
+                                </div>
+                                <div className="flex-1">
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min="0"
+                                    value={caseCounts[item.id]?.[loc.key]?.singles ?? ''}
+                                    onChange={(e) => updateCaseCount(item.id, loc.key, 'singles', e.target.value)}
+                                    onBlur={() => saveCaseCount(item.id, loc.key, item.units_per_case)}
+                                    className="w-full h-7 text-center font-bold text-sm bg-white rounded border px-1"
+                                    placeholder="0"
+                                  />
+                                  <div className="text-[10px] text-center text-gray-600">1️⃣</div>
+                                </div>
+                              </div>
+                            ) : (
+                              // Simple units mode
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                value={localCount[loc.key] ?? ''}
+                                onChange={(e) => updateLocalCount(item.id, loc.key, e.target.value)}
+                                onBlur={() => saveCount(item.id, loc.key)}
+                                className="w-full h-7 text-center font-bold text-sm bg-white rounded border"
+                                placeholder="0"
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
@@ -386,27 +614,26 @@ function StockManager() {
             ))}
           </TabsContent>
 
-          {/* INVENTORY TAB */}
+          {/* ==================== INVENTORY TAB ==================== */}
           <TabsContent value="inventory" className="space-y-3">
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-3">
-                <h3 className="font-semibold text-green-900 text-sm">Full Inventory Overview</h3>
-                <p className="text-xs text-green-700">Review stock levels and set order quantities</p>
+                <h3 className="font-semibold text-green-900 text-sm">Full Inventory</h3>
+                <p className="text-xs text-green-700">Review stock and set order quantities</p>
               </CardContent>
             </Card>
 
-            {/* Inventory Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="w-full text-xs sm:text-sm">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
-                    <th className="text-left p-2">Item</th>
-                    <th className="text-center p-2">Have</th>
-                    <th className="text-center p-2">Cases</th>
-                    <th className="text-center p-2">Target</th>
-                    <th className="text-center p-2">Need</th>
-                    <th className="text-center p-2 bg-blue-100">Order</th>
-                    <th className="text-left p-2">Vendor</th>
+                    <th className="text-left p-2 font-semibold">Item</th>
+                    <th className="text-center p-2 font-semibold">Have</th>
+                    <th className="text-center p-2 font-semibold">Cases</th>
+                    <th className="text-center p-2 font-semibold">Target</th>
+                    <th className="text-center p-2 font-semibold">Need</th>
+                    <th className="text-center p-2 font-semibold bg-blue-100">Order</th>
+                    <th className="text-left p-2 font-semibold">Vendor</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -417,27 +644,27 @@ function StockManager() {
                       </tr>
                       {groups[groupKey].items.map(item => {
                         const have = getTotalStock(item.id);
-                        const target = item.target_stock || item.max_stock || 0;
+                        const target = getTarget(item);
                         const need = Math.max(0, target - have);
                         const cases = getCases(have, item.units_per_case);
                         const suggested = getSuggestedOrder(item);
-                        const orderQty = orderQtys[item.id] !== undefined ? orderQtys[item.id] : suggested;
-                        const isCase = item.units_per_case > 1;
+                        const orderQty = orderQtys[item.id] ?? suggested;
+                        const isCase = item.units_per_case > 1 && item.bought_by_case;
                         
                         return (
                           <tr key={item.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 font-medium">{item.name}</td>
+                            <td className="p-2">{item.name}</td>
                             <td className={`p-2 text-center ${have < target * 0.25 ? 'text-red-600 font-bold' : ''}`}>{have}</td>
                             <td className="p-2 text-center text-gray-500">{cases || '-'}</td>
-                            <td className="p-2 text-center">{target}</td>
+                            <td className="p-2 text-center">{target || '-'}</td>
                             <td className="p-2 text-center">{need > 0 ? need : '-'}</td>
                             <td className="p-2 text-center bg-blue-50">
-                              <Input
+                              <input
                                 type="number"
                                 min="0"
                                 value={orderQty}
                                 onChange={(e) => updateOrderQty(item.id, e.target.value)}
-                                className="w-14 h-6 text-center font-bold text-sm mx-auto"
+                                className="w-14 h-6 text-center font-bold text-sm border rounded mx-auto block"
                               />
                               <div className="text-[10px] text-gray-500">{isCase ? 'cases' : 'units'}</div>
                             </td>
@@ -456,16 +683,16 @@ function StockManager() {
             </div>
 
             <Button onClick={() => setActiveTab('orders')} className="w-full">
-              Generate Orders →
+              View Orders →
             </Button>
           </TabsContent>
 
-          {/* ORDERS TAB */}
+          {/* ==================== ORDERS TAB ==================== */}
           <TabsContent value="orders" className="space-y-3">
             {Object.keys(orders).length === 0 ? (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-gray-500">No orders to place. Adjust quantities in Inventory tab.</p>
+                  <p className="text-gray-500">No orders to place. Set quantities in Inventory tab.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -485,8 +712,14 @@ function StockManager() {
                             onClick={() => copyOrderList(supplier, orderItems)}
                             className="h-7 text-xs"
                           >
-                            <Copy className="w-3 h-3 mr-1" />
-                            Copy
+                            <Copy className="w-3 h-3 mr-1" /> Copy
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => startConfirmPurchase(supplier, orderItems)}
+                            className="h-7 text-xs bg-white text-gray-900 hover:bg-gray-100"
+                          >
+                            <CheckCircle className="w-3 h-3 mr-1" /> Confirm
                           </Button>
                         </div>
                       </div>
@@ -497,12 +730,12 @@ function StockManager() {
                           <div key={idx} className="px-3 py-2 flex justify-between items-center">
                             <div>
                               <span className="font-medium text-sm">{item.name}</span>
-                              {item.units_per_case > 1 && (
+                              {item.isCase && (
                                 <span className="text-xs text-gray-500 ml-2">({item.orderUnits} units)</span>
                               )}
                             </div>
                             <div className="text-right">
-                              <span className="font-bold">{item.orderQty} {item.units_per_case > 1 ? 'cases' : 'units'}</span>
+                              <span className="font-bold">{item.orderQty} {item.isCase ? 'cases' : 'units'}</span>
                               <span className="text-xs text-gray-500 ml-2">฿{item.cost.toFixed(0)}</span>
                             </div>
                           </div>
@@ -513,112 +746,182 @@ function StockManager() {
                 );
               })
             )}
-
-            <Button 
-              onClick={() => {
-                localStorage.removeItem('orderQtys');
-                setOrderQtys({});
-                toast({ title: "Order quantities cleared" });
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              Clear All Orders
-            </Button>
           </TabsContent>
 
-          {/* MANAGE TAB */}
+          {/* ==================== MANAGE TAB (Spreadsheet Style) ==================== */}
           <TabsContent value="manage" className="space-y-3">
-            <Card>
-              <CardHeader className="py-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">Manage Items</CardTitle>
-                <Button size="sm" onClick={() => { setEditingItem(null); setEditDialogOpen(true); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Add Item
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y max-h-[60vh] overflow-y-auto">
-                  {items.sort((a, b) => a.name.localeCompare(b.name)).map(item => (
-                    <div key={item.id} className="px-3 py-2 flex items-center justify-between hover:bg-gray-50">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{item.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {item.category_name} {item.sub_category && `• ${item.sub_category}`} • {item.primary_supplier} • ฿{parseFloat(item.cost_per_unit).toFixed(0)}/unit
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="sm" onClick={() => { setEditingItem(item); setEditDialogOpen(true); }}>
-                          Edit
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => duplicateItem(item)}>
-                          Dup
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600" onClick={() => deleteItem(item.id)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Input
+                placeholder="Filter items..."
+                value={manageFilter}
+                onChange={(e) => setManageFilter(e.target.value)}
+                className="flex-1 h-8 text-sm"
+              />
+              <Button size="sm" onClick={addItem}>
+                <Plus className="w-4 h-4 mr-1" /> Add
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto bg-white rounded-lg shadow">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="text-left p-1.5 font-semibold min-w-[150px]">Name</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[100px]">Category</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[80px]">Sub-Cat</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[80px]">Vendor</th>
+                    <th className="text-center p-1.5 font-semibold w-16">#/Case</th>
+                    <th className="text-center p-1.5 font-semibold w-20">฿/Unit</th>
+                    <th className="text-center p-1.5 font-semibold w-20">฿/Case</th>
+                    <th className="text-center p-1.5 font-semibold w-16">Target</th>
+                    <th className="text-center p-1.5 font-semibold w-12">Case?</th>
+                    <th className="text-center p-1.5 font-semibold w-16">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {manageSortedKeys.map(groupKey => (
+                    <React.Fragment key={groupKey}>
+                      <tr className={categoryColors[manageGroups[groupKey].category] || 'bg-gray-200'}>
+                        <td colSpan={10} className="p-1 font-semibold text-xs">{groupKey}</td>
+                      </tr>
+                      {manageGroups[groupKey].items.map(item => (
+                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, name: e.target.value} : i))}
+                              onBlur={(e) => saveItem(item.id, { name: e.target.value })}
+                              className="w-full h-6 px-1 text-xs border rounded"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <select
+                              value={item.category_name}
+                              onChange={(e) => {
+                                const cat = defaultCategories.find(c => c.label === e.target.value);
+                                saveItem(item.id, { category: cat?.value || 'O', category_name: e.target.value });
+                              }}
+                              className="w-full h-6 px-1 text-xs border rounded"
+                            >
+                              {defaultCategories.map(c => (
+                                <option key={c.label} value={c.label}>{c.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={item.sub_category || ''}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, sub_category: e.target.value} : i))}
+                              onBlur={(e) => saveItem(item.id, { sub_category: e.target.value })}
+                              className="w-full h-6 px-1 text-xs border rounded"
+                              placeholder="e.g. Rum"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <select
+                              value={item.primary_supplier}
+                              onChange={(e) => saveItem(item.id, { primary_supplier: e.target.value })}
+                              className="w-full h-6 px-1 text-xs border rounded"
+                            >
+                              {defaultSuppliers.map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.units_per_case}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, units_per_case: parseInt(e.target.value) || 1} : i))}
+                              onBlur={(e) => saveItem(item.id, { units_per_case: parseInt(e.target.value) || 1 })}
+                              className="w-full h-6 px-1 text-xs border rounded text-center"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.cost_per_unit || ''}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, cost_per_unit: e.target.value} : i))}
+                              onBlur={(e) => saveItem(item.id, { cost_per_unit: parseFloat(e.target.value) || 0 })}
+                              className="w-full h-6 px-1 text-xs border rounded text-center"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.cost_per_case || ''}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, cost_per_case: e.target.value} : i))}
+                              onBlur={(e) => saveItem(item.id, { cost_per_case: parseFloat(e.target.value) || 0 })}
+                              className="w-full h-6 px-1 text-xs border rounded text-center"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.target_stock || item.max_stock || ''}
+                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, target_stock: e.target.value} : i))}
+                              onBlur={(e) => saveItem(item.id, { target_stock: parseInt(e.target.value) || 0 })}
+                              className="w-full h-6 px-1 text-xs border rounded text-center"
+                            />
+                          </td>
+                          <td className="p-1 text-center">
+                            <input
+                              type="checkbox"
+                              checked={item.bought_by_case || false}
+                              onChange={(e) => saveItem(item.id, { bought_by_case: e.target.checked })}
+                              className="w-4 h-4"
+                            />
+                          </td>
+                          <td className="p-1 text-center">
+                            <div className="flex gap-1 justify-center">
+                              <button
+                                onClick={() => duplicateItem(item)}
+                                className="p-1 hover:bg-gray-200 rounded"
+                                title="Duplicate"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => deleteItem(item.id)}
+                                className="p-1 hover:bg-red-100 rounded text-red-600"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
+                </tbody>
+              </table>
+            </div>
           </TabsContent>
 
-          {/* ACCOUNTING TAB */}
+          {/* ==================== ACCOUNTING TAB ==================== */}
           <TabsContent value="accounting" className="space-y-3">
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-base">Usage & Cost Analysis</CardTitle>
-                <p className="text-xs text-gray-500">Compare sessions to track usage and spending</p>
+                <p className="text-xs text-gray-500">Coming soon: Compare sessions to track usage and spending</p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Opening Count (From)</Label>
-                      <Select>
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Select session" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sessions.map(s => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.session_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Closing Count (To)</Label>
-                      <Select>
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Select session" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sessions.map(s => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.session_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <Button className="w-full" disabled>
-                    Generate Usage Report
-                  </Button>
-
-                  <p className="text-center text-gray-500 text-sm py-4">
-                    Usage reports coming soon.<br/>
-                    Will show: Opening stock + Purchases - Closing stock = Usage × Cost
-                  </p>
-                </div>
+                <p className="text-center text-gray-500 py-8">
+                  Formula: Opening Stock + Purchases - Closing Stock = Usage<br/>
+                  Usage × Cost per Unit = Total Cost
+                </p>
               </CardContent>
             </Card>
 
-            {/* Saved Sessions */}
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-base">Saved Sessions</CardTitle>
@@ -626,7 +929,7 @@ function StockManager() {
               <CardContent className="p-0">
                 <div className="divide-y max-h-60 overflow-y-auto">
                   {sessions.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4 text-sm">No saved sessions yet</p>
+                    <p className="text-center text-gray-500 py-4 text-sm">No saved sessions</p>
                   ) : (
                     sessions.map(session => (
                       <div key={session.id} className="px-3 py-2">
@@ -643,25 +946,13 @@ function StockManager() {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Item Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingItem?.id ? 'Edit Item' : 'Add Item'}</DialogTitle>
-            </DialogHeader>
-            <ItemForm
-              item={editingItem}
-              onSave={saveItem}
-              onCancel={() => setEditDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-
+        {/* ==================== DIALOGS ==================== */}
+        
         {/* Copy Dialog */}
         <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Copy Order List</DialogTitle>
+              <DialogTitle>Copy Order</DialogTitle>
             </DialogHeader>
             <pre className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">{copyText}</pre>
             <Button onClick={() => {
@@ -674,156 +965,69 @@ function StockManager() {
           </DialogContent>
         </Dialog>
 
+        {/* Confirm Purchase Dialog */}
+        <Dialog open={confirmPurchaseOpen} onOpenChange={setConfirmPurchaseOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Purchase: {currentOrder?.supplier}</DialogTitle>
+            </DialogHeader>
+            
+            {currentOrder && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Adjust quantities if actual differs from ordered:</p>
+                
+                <div className="space-y-2">
+                  {currentOrder.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm truncate block">{item.name}</span>
+                        <span className="text-xs text-gray-500">Ordered: {item.orderQty}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Got:</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.actualQty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            const cost = item.isCase 
+                              ? val * (parseFloat(item.cost_per_case) || parseFloat(item.cost_per_unit) * item.units_per_case)
+                              : val * parseFloat(item.cost_per_unit);
+                            setCurrentOrder(prev => ({
+                              ...prev,
+                              items: prev.items.map((it, i) => i === idx ? {...it, actualQty: val, actualCost: cost} : it)
+                            }));
+                          }}
+                          className="w-14 h-7 text-center border rounded"
+                        />
+                        <span className="text-xs text-gray-500">
+                          ฿{currentOrder.items[idx].actualCost?.toFixed(0)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="font-bold">
+                    Total: ฿{currentOrder.items.reduce((sum, it) => sum + (it.actualCost || 0), 0).toFixed(0)}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setConfirmPurchaseOpen(false)}>Cancel</Button>
+                    <Button onClick={savePurchase}>
+                      <CheckCircle className="w-4 h-4 mr-1" /> Save Purchase
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
     </div>
-  );
-}
-
-// Item Form Component
-function ItemForm({ item, onSave, onCancel }) {
-  const [form, setForm] = useState({
-    name: item?.name || '',
-    category: item?.category || 'B',
-    category_name: item?.category_name || 'Beer',
-    sub_category: item?.sub_category || '',
-    units_per_case: item?.units_per_case || 1,
-    target_stock: item?.target_stock || item?.max_stock || 0,
-    sort_order: item?.sort_order || 0,
-    primary_supplier: item?.primary_supplier || 'Makro',
-    cost_per_unit: item?.cost_per_unit || 0,
-    cost_per_case: item?.cost_per_case || 0,
-    bought_by_case: item?.bought_by_case || false
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(form);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <Label className="text-xs">Name</Label>
-        <Input
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Category</Label>
-          <Select
-            value={form.category_name}
-            onValueChange={(val) => {
-              const cat = defaultCategories.find(c => c.label === val);
-              setForm({ ...form, category: cat?.value || 'O', category_name: val });
-            }}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {defaultCategories.map(c => (
-                <SelectItem key={c.label} value={c.label}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-xs">Sub-Category (optional)</Label>
-          <Input
-            value={form.sub_category}
-            onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
-            placeholder="e.g. Tequila, Vodka"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Units per Case</Label>
-          <Input
-            type="number"
-            min="1"
-            value={form.units_per_case}
-            onChange={(e) => setForm({ ...form, units_per_case: parseInt(e.target.value) || 1 })}
-          />
-        </div>
-        <div>
-          <Label className="text-xs">Target Stock</Label>
-          <Input
-            type="number"
-            min="0"
-            value={form.target_stock}
-            onChange={(e) => setForm({ ...form, target_stock: parseInt(e.target.value) || 0 })}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label className="text-xs">Supplier</Label>
-        <Select
-          value={form.primary_supplier}
-          onValueChange={(val) => setForm({ ...form, primary_supplier: val })}
-        >
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {defaultSuppliers.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Cost per Unit (฿)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.cost_per_unit}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value) || 0;
-              setForm({
-                ...form,
-                cost_per_unit: val,
-                cost_per_case: form.units_per_case > 1 ? val * form.units_per_case : val
-              });
-            }}
-          />
-        </div>
-        <div>
-          <Label className="text-xs">Cost per Case (฿)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.cost_per_case}
-            onChange={(e) => setForm({ ...form, cost_per_case: parseFloat(e.target.value) || 0 })}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="bought_by_case"
-          checked={form.bought_by_case}
-          onChange={(e) => setForm({ ...form, bought_by_case: e.target.checked })}
-          className="rounded"
-        />
-        <Label htmlFor="bought_by_case" className="text-xs">Usually bought by case</Label>
-      </div>
-
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
-        <Button type="submit" className="flex-1">
-          <CheckCircle className="w-4 h-4 mr-1" /> Save
-        </Button>
-      </div>
-    </form>
   );
 }
 
