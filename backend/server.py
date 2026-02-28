@@ -45,15 +45,14 @@ class ItemCreate(BaseModel):
     name: str
     category: str
     category_name: str
+    sub_category: Optional[str] = None  # For grouping like "Tequila", "Vodka", "Rum"
     units_per_case: int = 1
-    min_stock: int = 0
-    max_stock: int = 0
+    target_stock: int = 0  # Simplified: just one target level
+    sort_order: int = 0  # For custom ordering
     primary_supplier: str
-    secondary_supplier: Optional[str] = None
     cost_per_unit: float = 0.0
     cost_per_case: float = 0.0
-    is_case_pricing: bool = False
-    bought_by_case: bool = False  # New field: whether this item is commonly bought by case
+    bought_by_case: bool = False  # Whether this item is commonly bought by case
 
 class StockCount(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
