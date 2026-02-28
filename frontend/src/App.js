@@ -354,14 +354,23 @@ function StockCounter() {
     try {
       const response = await axios.get(`${API}/items`);
       if (response.data.length === 0) {
-        // Initialize with real data if no items exist
-        await initializeRealData();
+        // No items exist - show empty state, don't auto-initialize
+        setItems([]);
+        toast({
+          title: "No items found",
+          description: "Add items in the Manage tab to get started",
+        });
       } else {
         setItems(response.data);
       }
     } catch (error) {
       console.error('Error loading items:', error);
-      await initializeRealData();
+      // Don't wipe data on error! Just show error message
+      toast({
+        title: "Error loading items",
+        description: "Could not connect to server. Please refresh the page.",
+        variant: "destructive",
+      });
     }
   };
 
