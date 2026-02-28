@@ -375,16 +375,39 @@ function StockCounter() {
   };
 
   const initializeRealData = async () => {
+    // This function is now protected - requires manual confirmation
+    // It's kept for admin use but won't auto-trigger
+    const confirmed = window.confirm(
+      "⚠️ WARNING: This will DELETE ALL your items and stock counts!\n\n" +
+      "Your custom prices, items, and history will be PERMANENTLY LOST.\n\n" +
+      "Only use this to reset to default demo data.\n\n" +
+      "Are you SURE you want to continue?"
+    );
+    
+    if (!confirmed) {
+      toast({
+        title: "Cancelled",
+        description: "Your data was not changed",
+      });
+      return;
+    }
+    
     try {
-      await axios.post(`${API}/initialize-real-data`);
+      await axios.post(`${API}/initialize-real-data?confirm=YES_DELETE_ALL_DATA`);
       const response = await axios.get(`${API}/items`);
       setItems(response.data);
       toast({
-        title: "Real inventory data loaded",
-        description: "Your bar inventory system is ready to use",
+        title: "Data reset complete",
+        description: "Default inventory data has been loaded",
+        variant: "destructive",
       });
     } catch (error) {
       console.error('Error initializing real data:', error);
+      toast({
+        title: "Error",
+        description: "Could not reset data",
+        variant: "destructive",
+      });
     }
   };
 
