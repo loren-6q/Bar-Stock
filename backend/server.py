@@ -759,9 +759,17 @@ async def save_counts_to_session(session_id: str):
     
     return {"message": f"Saved {len(current_counts)} stock counts to session", "count": len(current_counts)}
 
-# Initialize with real data from spreadsheet
+# Initialize with real data from spreadsheet - DANGEROUS: Wipes all data!
 @api_router.post("/initialize-real-data")
-async def initialize_real_data():
+async def initialize_real_data(confirm: str = None):
+    # Safety check - require confirmation parameter
+    if confirm != "YES_DELETE_ALL_DATA":
+        return {
+            "error": "SAFETY CHECK FAILED",
+            "message": "This endpoint DELETES ALL ITEMS AND COUNTS. To proceed, add ?confirm=YES_DELETE_ALL_DATA to the URL.",
+            "warning": "Your custom items, prices, and stock counts will be PERMANENTLY LOST."
+        }
+    
     # Clear existing data
     await db.items.delete_many({})
     await db.stock_counts.delete_many({})
