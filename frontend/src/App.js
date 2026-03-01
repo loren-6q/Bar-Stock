@@ -932,36 +932,44 @@ function StockManager() {
           <TabsContent value="accounting" className="space-y-3">
             <Card>
               <CardHeader className="py-3">
-                <CardTitle className="text-base">Usage & Cost Analysis</CardTitle>
-                <p className="text-xs text-gray-500">Coming soon: Compare sessions to track usage and spending</p>
+                <CardTitle className="text-base">📋 Saved Stock Counts</CardTitle>
+                <p className="text-xs text-gray-500">Click a session to view full inventory at that time</p>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-gray-500 py-8">
-                  Formula: Opening Stock + Purchases - Closing Stock = Usage<br/>
-                  Usage × Cost per Unit = Total Cost
-                </p>
+              <CardContent className="p-0">
+                <div className="divide-y max-h-[50vh] overflow-y-auto">
+                  {sessions.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8 text-sm">No saved sessions yet. Save a count from the Count tab.</p>
+                  ) : (
+                    sessions.map(session => (
+                      <button
+                        key={session.id}
+                        onClick={() => viewSession(session)}
+                        className="w-full text-left px-3 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="font-medium text-sm">{session.session_name}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(session.session_date).toLocaleString()}
+                          </div>
+                        </div>
+                        <span className="text-blue-600 text-sm">View →</span>
+                      </button>
+                    ))
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="py-3">
-                <CardTitle className="text-base">Saved Sessions</CardTitle>
+                <CardTitle className="text-base">Usage Analysis</CardTitle>
+                <p className="text-xs text-gray-500">Coming soon</p>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y max-h-60 overflow-y-auto">
-                  {sessions.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4 text-sm">No saved sessions</p>
-                  ) : (
-                    sessions.map(session => (
-                      <div key={session.id} className="px-3 py-2">
-                        <div className="font-medium text-sm">{session.session_name}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(session.session_date).toLocaleString()}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+              <CardContent>
+                <p className="text-center text-gray-400 py-4 text-sm">
+                  Opening Stock + Purchases - Closing Stock = Usage<br/>
+                  Usage × Cost = Expense | Usage × Sale Price = Revenue
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
