@@ -47,6 +47,6 @@
 
 **Testing completed on**: December 28, 2024
 **Testing agent**: Testing Agent  
-**App URL**: https://stockhero-1.preview.emergentagent.com
+**App URL**: https://liquor-inventory-9.preview.emergentagent.com
 **Status**: 3/4 tests passed, 1 critical issue with Manage tab
 

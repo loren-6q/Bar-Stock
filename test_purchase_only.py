@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 def test_purchase_management():
-    base_url = "https://stockhero-1.preview.emergentagent.com"
+    base_url = "https://liquor-inventory-9.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🧪 Testing Purchase Management APIs")
