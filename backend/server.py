@@ -320,6 +320,36 @@ async def delete_item(item_id: str):
     
     return {"message": "Item deleted successfully"}
 
+# Recipe endpoints
+@api_router.post("/recipes", response_model=Recipe)
+async def create_recipe(recipe: RecipeCreate):
+    recipe_obj = Recipe(**recipe.dict())
+    await db.recipes.insert_one(prepare_for_mongo(recipe_obj.dict()))
+    return recipe_obj
+
+@api_router.get("/recipes", response_model=List[Recipe])
+async def get_recipes():
+    recipes = await db.recipes.find().to_list(1000)
+    return [Recipe(**parse_from_mongo(r)) for r in recipes]
+
+@api_router.put("/recipes/{recipe_id}", response_model=Recipe)
+async def update_recipe(recipe_id: str, recipe_update: RecipeCreate):
+    result = await db.recipes.update_one(
+        {"id": recipe_id},
+        {"$set": recipe_update.dict()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    updated = await db.recipes.find_one({"id": recipe_id})
+    return Recipe(**parse_from_mongo(updated))
+
+@api_router.delete("/recipes/{recipe_id}")
+async def delete_recipe(recipe_id: str):
+    result = await db.recipes.delete_one({"id": recipe_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return {"message": "Recipe deleted"}
+
 # Stock counting endpoints
 @api_router.post("/stock-counts", response_model=StockCount)
 async def create_stock_count(count: StockCountCreate):
