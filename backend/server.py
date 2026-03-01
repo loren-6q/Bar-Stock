@@ -264,6 +264,10 @@ async def create_item(item: ItemCreate):
     # Calculate cost per case if not provided
     if item_dict['cost_per_case'] == 0 and item_dict['cost_per_unit'] > 0:
         item_dict['cost_per_case'] = round(item_dict['cost_per_unit'] * item_dict['units_per_case'], 1)
+    # Always round cost fields
+    for f in ['cost_per_unit', 'cost_per_case', 'sale_price']:
+        if item_dict.get(f):
+            item_dict[f] = round(item_dict[f], 1)
     
     item_obj = Item(**item_dict)
     result = await db.items.insert_one(prepare_for_mongo(item_obj.dict()))
@@ -298,6 +302,10 @@ async def update_item(item_id: str, item_update: ItemCreate):
     # Recalculate cost per case (rounded to 1 decimal)
     if update_dict['cost_per_case'] == 0 and update_dict['cost_per_unit'] > 0:
         update_dict['cost_per_case'] = round(update_dict['cost_per_unit'] * update_dict['units_per_case'], 1)
+    # Always round cost fields
+    for f in ['cost_per_unit', 'cost_per_case', 'sale_price']:
+        if update_dict.get(f):
+            update_dict[f] = round(update_dict[f], 1)
     
     result = await db.items.update_one(
         {"id": item_id}, 
