@@ -914,19 +914,34 @@ function StockManager() {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={item.cost_per_case || ''}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, cost_per_case: e.target.value} : i))}
-                              onBlur={(e) => saveItem(item.id, { cost_per_case: parseFloat(e.target.value) || 0 })}
+                              value={getEditOrVal(item.id, 'cost_per_case', item.cost_per_case || '')}
+                              onFocus={() => startCellEdit(item.id, 'cost_per_case', item.cost_per_case || '')}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'cost_per_case', v => parseFloat(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
                             />
                           </td>
                           <td className="p-1">
                             <input
                               type="number"
+                              step="0.01"
                               min="0"
-                              value={item.target_stock || item.max_stock || ''}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, target_stock: e.target.value} : i))}
-                              onBlur={(e) => saveItem(item.id, { target_stock: parseInt(e.target.value) || 0 })}
+                              value={getEditOrVal(item.id, 'sale_price', item.sale_price || '')}
+                              onFocus={() => startCellEdit(item.id, 'sale_price', item.sale_price || '')}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'sale_price', v => parseFloat(v) || 0)}
+                              className="w-full h-6 px-1 text-xs border rounded text-center"
+                              data-testid={`edit-sale-price-${item.id}`}
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={getEditOrVal(item.id, 'target_stock', item.target_stock || '')}
+                              onFocus={() => startCellEdit(item.id, 'target_stock', item.target_stock || '')}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'target_stock', v => parseInt(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
                             />
                           </td>
