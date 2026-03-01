@@ -870,9 +870,27 @@ function StockManager() {
                         </tr>
                       )}
                       {group.subCategory && (
-                        <tr className="bg-gray-50">
-                          <td colSpan={11} className="py-0.5 pl-4 text-xs font-medium text-gray-500 italic border-l-2 border-gray-300">
-                            {group.subCategory}
+                        <tr className="bg-gray-50" data-testid={`subcat-row-${group.subCategory}`}>
+                          <td colSpan={11} className="py-0.5 pl-4 text-xs font-medium text-gray-500 border-l-2 border-gray-300">
+                            <div className="flex items-center gap-1">
+                              <span className="italic">{group.subCategory}</span>
+                              <button
+                                onClick={() => moveSubCategory(group.category, group.subCategory, 'up')}
+                                className="p-0.5 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700"
+                                title="Move up"
+                                data-testid={`subcat-up-${group.subCategory}`}
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => moveSubCategory(group.category, group.subCategory, 'down')}
+                                className="p-0.5 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700"
+                                title="Move down"
+                                data-testid={`subcat-down-${group.subCategory}`}
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )}
