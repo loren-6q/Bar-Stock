@@ -70,9 +70,13 @@ function StockManager() {
   const [copyText, setCopyText] = useState('');
   const [confirmPurchaseOpen, setConfirmPurchaseOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [viewSessionOpen, setViewSessionOpen] = useState(false);
+  const [viewingSession, setViewingSession] = useState(null);
+  const [sessionCounts, setSessionCounts] = useState([]);
   
-  // Manage tab filter
+  // Manage tab filter and editing state
   const [manageFilter, setManageFilter] = useState('');
+  const [editingCell, setEditingCell] = useState(null); // Track which cell is being edited
   
   const { toast } = useToast();
 
