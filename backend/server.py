@@ -250,6 +250,17 @@ async def get_items():
     items = await db.items.find().to_list(1000)
     return [Item(**parse_from_mongo(item)) for item in items]
 
+# Batch update sort order (must be before /items/{item_id} routes)
+@api_router.put("/items/batch-sort-order")
+async def batch_update_sort_order(request: Request):
+    updates = await request.json()
+    for update in updates:
+        await db.items.update_one(
+            {"id": update["id"]},
+            {"$set": {"sort_order": update["sort_order"]}}
+        )
+    return {"message": f"Updated {len(updates)} items"}
+
 @api_router.get("/items/{item_id}", response_model=Item)
 async def get_item(item_id: str):
     item = await db.items.find_one({"id": item_id})
