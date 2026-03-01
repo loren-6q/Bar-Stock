@@ -78,6 +78,12 @@ function StockManager() {
   const [manageFilter, setManageFilter] = useState('');
   const [editingCell, setEditingCell] = useState(null); // {id, field}
   const [editValue, setEditValue] = useState('');
+  const [manageSort, setManageSort] = useState({ field: null, dir: 'asc' });
+  
+  // Recipes
+  const [recipes, setRecipes] = useState([]);
+  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   
   const { toast } = useToast();
 
@@ -89,13 +95,15 @@ function StockManager() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [itemsRes, countsRes, sessionsRes] = await Promise.all([
+      const [itemsRes, countsRes, sessionsRes, recipesRes] = await Promise.all([
         axios.get(`${API}/items`),
         axios.get(`${API}/stock-counts`),
-        axios.get(`${API}/stock-sessions`)
+        axios.get(`${API}/stock-sessions`),
+        axios.get(`${API}/recipes`)
       ]);
       
       setItems(itemsRes.data);
+      setRecipes(recipesRes.data);
       
       // Convert counts array to map
       const countsMap = {};
