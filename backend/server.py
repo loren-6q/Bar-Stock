@@ -42,7 +42,29 @@ class Item(BaseModel):
     bought_by_case: bool = False  # Whether this item is commonly bought by case
     sale_price: Optional[float] = None
 
-class ItemCreate(BaseModel):
+# Recipe models
+class RecipeIngredient(BaseModel):
+    item_id: str
+    item_name: str = ""
+    servings_per_unit: float = 1.0
+    servings_used: float = 1.0
+
+class RecipeFixedCost(BaseModel):
+    name: str
+    cost: float = 0.0
+
+class Recipe(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    sale_price: float = 0.0
+    ingredients: List[RecipeIngredient] = []
+    fixed_costs: List[RecipeFixedCost] = []
+
+class RecipeCreate(BaseModel):
+    name: str
+    sale_price: float = 0.0
+    ingredients: List[RecipeIngredient] = []
+    fixed_costs: List[RecipeFixedCost] = []
     name: str
     category: str
     category_name: str
