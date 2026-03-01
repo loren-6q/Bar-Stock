@@ -1054,6 +1054,86 @@ function StockManager() {
           </DialogContent>
         </Dialog>
 
+        {/* View Session Dialog */}
+        <Dialog open={viewSessionOpen} onOpenChange={setViewSessionOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>📋 {viewingSession?.session_name}</DialogTitle>
+              <p className="text-sm text-gray-500">
+                {viewingSession && new Date(viewingSession.session_date).toLocaleString()}
+              </p>
+            </DialogHeader>
+            
+            {sessionCounts.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No count data found for this session.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th className="text-left p-2">Item</th>
+                      <th className="text-center p-2 bg-orange-100">Bar</th>
+                      <th className="text-center p-2 bg-yellow-100">Beer</th>
+                      <th className="text-center p-2 bg-blue-100">Lobby</th>
+                      <th className="text-center p-2 bg-green-100">Storage</th>
+                      <th className="text-center p-2 bg-blue-200 font-bold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      // Map item IDs to names
+                      const itemMap = {};
+                      items.forEach(item => { itemMap[item.id] = item; });
+                      
+                      // Group by category
+                      const grouped = {};
+                      sessionCounts.forEach(count => {
+                        const item = itemMap[count.item_id];
+                        if (!item) return;
+                        const cat = item.category_name || 'Other';
+                        if (!grouped[cat]) grouped[cat] = [];
+                        grouped[cat].push({ ...count, item });
+                      });
+                      
+                      const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
+                      const sortedCats = Object.keys(grouped).sort((a, b) => {
+                        const idxA = categoryOrder.indexOf(a);
+                        const idxB = categoryOrder.indexOf(b);
+                        return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                      });
+                      
+                      return sortedCats.map(cat => (
+                        <React.Fragment key={cat}>
+                          <tr className={categoryColors[cat] || 'bg-gray-200'}>
+                            <td colSpan={6} className="p-1 font-semibold text-xs">{cat}</td>
+                          </tr>
+                          {grouped[cat]
+                            .sort((a, b) => a.item.name.localeCompare(b.item.name))
+                            .map(count => (
+                              <tr key={count.item_id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">{count.item.name}</td>
+                                <td className="p-2 text-center bg-orange-50">{count.main_bar || 0}</td>
+                                <td className="p-2 text-center bg-yellow-50">{count.beer_bar || 0}</td>
+                                <td className="p-2 text-center bg-blue-50">{count.lobby || 0}</td>
+                                <td className="p-2 text-center bg-green-50">{count.storage_room || 0}</td>
+                                <td className="p-2 text-center font-bold bg-blue-100">{count.total_count || 0}</td>
+                              </tr>
+                            ))}
+                        </React.Fragment>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center pt-2 border-t">
+              <span className="text-sm text-gray-500">{sessionCounts.length} items counted</span>
+              <Button variant="outline" onClick={() => setViewSessionOpen(false)}>Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
     </div>
