@@ -386,17 +386,20 @@ function StockManager() {
       const item = items.find(i => i.id === itemId);
       const payload = { ...item, ...updates };
       
-      // Auto-calculate costs (rounded to 1 decimal)
-      if (updates.cost_per_unit !== undefined && payload.units_per_case > 1) {
+      // Auto-calculate costs bidirectionally (rounded to 1 decimal)
+      if (updates.cost_per_unit !== undefined && payload.units_per_case >= 1) {
         payload.cost_per_case = Math.round(parseFloat(updates.cost_per_unit) * payload.units_per_case * 10) / 10;
-      } else if (updates.cost_per_case !== undefined && payload.units_per_case > 1) {
+      } else if (updates.cost_per_case !== undefined && payload.units_per_case >= 1) {
         payload.cost_per_unit = Math.round(parseFloat(updates.cost_per_case) / payload.units_per_case * 10) / 10;
       }
+      // Always round all cost fields to 1 decimal
+      if (payload.cost_per_unit) payload.cost_per_unit = Math.round(payload.cost_per_unit * 10) / 10;
+      if (payload.cost_per_case) payload.cost_per_case = Math.round(payload.cost_per_case * 10) / 10;
+      if (payload.sale_price) payload.sale_price = Math.round(payload.sale_price * 10) / 10;
       
-      await axios.put(`${API}/items/${itemId}`, payload);
-      
-      // Update local state
+      // Update local state first for responsive UI
       setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...payload } : i));
+      await axios.put(`${API}/items/${itemId}`, payload);
     } catch (error) {
       console.error('Error saving item:', error);
       toast({ title: "Error saving", variant: "destructive" });
@@ -907,7 +910,7 @@ function StockManager() {
               </Button>
             </div>
 
-            <div className="overflow-auto max-h-[70vh] bg-white rounded-lg shadow">
+            <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="w-full text-xs">
                 <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr>
