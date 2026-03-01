@@ -297,6 +297,23 @@ function StockManager() {
     return orders;
   };
 
+  // View session details
+  const viewSession = async (session) => {
+    try {
+      const response = await axios.get(`${API}/stock-sessions/${session.id}/counts`);
+      setSessionCounts(response.data);
+      setViewingSession(session);
+      setViewSessionOpen(true);
+    } catch (error) {
+      console.error('Error loading session:', error);
+      toast({
+        title: "Error loading session",
+        description: "Could not load session data",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Copy order list
   const copyOrderList = (supplier, orderItems) => {
     let text = `Order for ${supplier}:\n\n`;
