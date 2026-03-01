@@ -534,6 +534,7 @@ function StockManager() {
   };
   const getEditOrVal = (itemId, field, fallback) =>
     editingCell?.id === itemId && editingCell?.field === field ? editValue : fallback;
+  const r1 = (v) => v ? Math.round(v * 10) / 10 : '';
 
   // Pre-compute group display flags for manage tab
   const manageDisplayGroups = manageSortedKeys.map((key, idx) => ({
