@@ -76,7 +76,8 @@ function StockManager() {
   
   // Manage tab filter and editing state
   const [manageFilter, setManageFilter] = useState('');
-  const [editingCell, setEditingCell] = useState(null); // Track which cell is being edited
+  const [editingCell, setEditingCell] = useState(null); // {id, field}
+  const [editValue, setEditValue] = useState('');
   
   const { toast } = useToast();
 
@@ -499,6 +500,26 @@ function StockManager() {
     : items;
   
   const { groups: manageGroups, sortedKeys: manageSortedKeys } = groupItems(filteredItems);
+
+  // Inline cell edit helpers (prevents re-sort while typing)
+  const startCellEdit = (itemId, field, value) => {
+    setEditingCell({ id: itemId, field });
+    setEditValue(value != null ? String(value) : '');
+  };
+  const commitCellEdit = (itemId, field, transform) => {
+    const val = transform ? transform(editValue) : editValue;
+    saveItem(itemId, { [field]: val });
+    setEditingCell(null);
+  };
+  const getEditOrVal = (itemId, field, fallback) =>
+    editingCell?.id === itemId && editingCell?.field === field ? editValue : fallback;
+
+  // Pre-compute group display flags for manage tab
+  const manageDisplayGroups = manageSortedKeys.map((key, idx) => ({
+    key,
+    group: manageGroups[key],
+    showCatHeader: idx === 0 || manageGroups[key].category !== manageGroups[manageSortedKeys[idx - 1]].category
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
