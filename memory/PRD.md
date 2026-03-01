@@ -41,10 +41,11 @@ Full-stack bar stock management application with mobile-friendly stock counting,
 - Fixed MANAGE tab sub-category input bug (local state prevents re-sorting)
 - Added Sale Price column to MANAGE tab and backend Item model
 - Improved sub-category grouping (parent header + indented sub-labels)
+- Unit price auto-calculation now rounds to 1 decimal place
+- Sub-category reordering via up/down arrows in MANAGE tab (persists across all tabs)
 
 ## Backlog
-- P1: Reorder subcategories (drag-and-drop)
 - P2: Full Accounting/Reporting (usage & cost analysis between counts)
-- P2: Complete data import (~25 missing items)
+- P2: Complete data import (user needs to re-enter missing items manually)
 - P3: Revenue tracking/estimation
 - P3: Quick end-of-night stock checks
