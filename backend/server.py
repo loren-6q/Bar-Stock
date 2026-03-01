@@ -290,11 +290,11 @@ class SortOrderUpdate(BaseModel):
     sort_order: int
 
 @api_router.put("/items/batch-sort-order")
-async def batch_update_sort_order(updates: List[SortOrderUpdate] = Body(...)):
+async def batch_update_sort_order(updates: List[dict] = Body(...)):
     for update in updates:
         await db.items.update_one(
-            {"id": update.id},
-            {"$set": {"sort_order": update.sort_order}}
+            {"id": update["id"]},
+            {"$set": {"sort_order": update["sort_order"]}}
         )
     return {"message": f"Updated {len(updates)} items"}
 
