@@ -102,7 +102,12 @@ function StockManager() {
         axios.get(`${API}/recipes`)
       ]);
       
-      setItems(itemsRes.data);
+      setItems(itemsRes.data.map(item => ({
+        ...item,
+        cost_per_unit: item.cost_per_unit ? Math.round(item.cost_per_unit * 10) / 10 : item.cost_per_unit,
+        cost_per_case: item.cost_per_case ? Math.round(item.cost_per_case * 10) / 10 : item.cost_per_case,
+        sale_price: item.sale_price ? Math.round(item.sale_price * 10) / 10 : item.sale_price,
+      })));
       setRecipes(recipesRes.data);
       
       // Convert counts array to map
