@@ -1027,8 +1027,8 @@ function StockManager() {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={getEditOrVal(item.id, 'cost_per_unit', item.cost_per_unit || '')}
-                              onFocus={() => startCellEdit(item.id, 'cost_per_unit', item.cost_per_unit || '')}
+                              value={getEditOrVal(item.id, 'cost_per_unit', r1(item.cost_per_unit))}
+                              onFocus={() => startCellEdit(item.id, 'cost_per_unit', r1(item.cost_per_unit))}
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={() => commitCellEdit(item.id, 'cost_per_unit', v => parseFloat(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
@@ -1039,8 +1039,8 @@ function StockManager() {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={getEditOrVal(item.id, 'cost_per_case', item.cost_per_case || '')}
-                              onFocus={() => startCellEdit(item.id, 'cost_per_case', item.cost_per_case || '')}
+                              value={getEditOrVal(item.id, 'cost_per_case', r1(item.cost_per_case))}
+                              onFocus={() => startCellEdit(item.id, 'cost_per_case', r1(item.cost_per_case))}
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={() => commitCellEdit(item.id, 'cost_per_case', v => parseFloat(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
@@ -1051,8 +1051,8 @@ function StockManager() {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={getEditOrVal(item.id, 'sale_price', item.sale_price || '')}
-                              onFocus={() => startCellEdit(item.id, 'sale_price', item.sale_price || '')}
+                              value={getEditOrVal(item.id, 'sale_price', r1(item.sale_price))}
+                              onFocus={() => startCellEdit(item.id, 'sale_price', r1(item.sale_price))}
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={() => commitCellEdit(item.id, 'sale_price', v => parseFloat(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
