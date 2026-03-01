@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './components/ui/label';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Copy, Plus, Trash2, Save, CheckCircle, Edit2, Package } from 'lucide-react';
+import { Copy, Plus, Trash2, Save, CheckCircle, Edit2, Package, ChevronUp, ChevronDown } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -378,11 +378,11 @@ function StockManager() {
       const item = items.find(i => i.id === itemId);
       const payload = { ...item, ...updates };
       
-      // Auto-calculate costs
+      // Auto-calculate costs (rounded to 1 decimal)
       if (updates.cost_per_unit !== undefined && payload.units_per_case > 1) {
-        payload.cost_per_case = parseFloat(updates.cost_per_unit) * payload.units_per_case;
+        payload.cost_per_case = Math.round(parseFloat(updates.cost_per_unit) * payload.units_per_case * 10) / 10;
       } else if (updates.cost_per_case !== undefined && payload.units_per_case > 1) {
-        payload.cost_per_unit = parseFloat(updates.cost_per_case) / payload.units_per_case;
+        payload.cost_per_unit = Math.round(parseFloat(updates.cost_per_case) / payload.units_per_case * 10) / 10;
       }
       
       await axios.put(`${API}/items/${itemId}`, payload);
@@ -459,7 +459,7 @@ function StockManager() {
       groups[key].items.push(item);
     });
     
-    // Sort groups by category then sub-category
+    // Sort groups by category, then no-sub first, then by sort_order
     const categoryOrder = ['Beer', 'Thai Alcohol', 'Import Alcohol', 'Mixers', 'Bar Supplies', 'Hostel Supplies'];
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       const catA = groups[a].category;
@@ -467,12 +467,22 @@ function StockManager() {
       const idxA = categoryOrder.indexOf(catA);
       const idxB = categoryOrder.indexOf(catB);
       if (idxA !== idxB) return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+      const subA = groups[a].subCategory;
+      const subB = groups[b].subCategory;
+      if (!subA && subB) return -1;
+      if (subA && !subB) return 1;
+      const orderA = Math.min(...groups[a].items.map(i => i.sort_order || 0));
+      const orderB = Math.min(...groups[b].items.map(i => i.sort_order || 0));
+      if (orderA !== orderB) return orderA - orderB;
       return a.localeCompare(b);
     });
     
-    // Sort items within groups alphabetically
+    // Sort items within groups by sort_order then name
     sortedKeys.forEach(key => {
-      groups[key].items.sort((a, b) => a.name.localeCompare(b.name));
+      groups[key].items.sort((a, b) => {
+        const od = (a.sort_order || 0) - (b.sort_order || 0);
+        return od !== 0 ? od : a.name.localeCompare(b.name);
+      });
     });
     
     return { groups, sortedKeys };

@@ -238,7 +238,7 @@ async def create_item(item: ItemCreate):
     item_dict = item.dict()
     # Calculate cost per case if not provided
     if item_dict['cost_per_case'] == 0 and item_dict['cost_per_unit'] > 0:
-        item_dict['cost_per_case'] = item_dict['cost_per_unit'] * item_dict['units_per_case']
+        item_dict['cost_per_case'] = round(item_dict['cost_per_unit'] * item_dict['units_per_case'], 1)
     
     item_obj = Item(**item_dict)
     result = await db.items.insert_one(prepare_for_mongo(item_obj.dict()))
@@ -259,9 +259,9 @@ async def get_item(item_id: str):
 @api_router.put("/items/{item_id}", response_model=Item)
 async def update_item(item_id: str, item_update: ItemCreate):
     update_dict = item_update.dict()
-    # Recalculate cost per case
+    # Recalculate cost per case (rounded to 1 decimal)
     if update_dict['cost_per_case'] == 0 and update_dict['cost_per_unit'] > 0:
-        update_dict['cost_per_case'] = update_dict['cost_per_unit'] * update_dict['units_per_case']
+        update_dict['cost_per_case'] = round(update_dict['cost_per_unit'] * update_dict['units_per_case'], 1)
     
     result = await db.items.update_one(
         {"id": item_id}, 
