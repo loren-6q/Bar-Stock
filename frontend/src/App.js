@@ -815,19 +815,29 @@ function StockManager() {
                     <th className="text-center p-1.5 font-semibold w-16">#/Case</th>
                     <th className="text-center p-1.5 font-semibold w-20">฿/Unit</th>
                     <th className="text-center p-1.5 font-semibold w-20">฿/Case</th>
+                    <th className="text-center p-1.5 font-semibold w-20">Sale ฿</th>
                     <th className="text-center p-1.5 font-semibold w-16">Target</th>
                     <th className="text-center p-1.5 font-semibold w-12">Case?</th>
                     <th className="text-center p-1.5 font-semibold w-16">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {manageSortedKeys.map(groupKey => (
-                    <React.Fragment key={groupKey}>
-                      <tr className={categoryColors[manageGroups[groupKey].category] || 'bg-gray-200'}>
-                        <td colSpan={10} className="p-1 font-semibold text-xs">{groupKey}</td>
-                      </tr>
-                      {manageGroups[groupKey].items.map(item => (
-                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                  {manageDisplayGroups.map(({ key, group, showCatHeader }) => (
+                    <React.Fragment key={key}>
+                      {showCatHeader && (
+                        <tr className={categoryColors[group.category] || 'bg-gray-200'}>
+                          <td colSpan={11} className="p-1 font-semibold text-xs">{group.category}</td>
+                        </tr>
+                      )}
+                      {group.subCategory && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={11} className="py-0.5 pl-4 text-xs font-medium text-gray-500 italic border-l-2 border-gray-300">
+                            {group.subCategory}
+                          </td>
+                        </tr>
+                      )}
+                      {group.items.map(item => (
+                        <tr key={item.id} className="border-b hover:bg-gray-50" data-testid={`manage-row-${item.id}`}>
                           <td className="p-1">
                             <input
                               type="text"
