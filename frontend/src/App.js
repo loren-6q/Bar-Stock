@@ -569,6 +569,61 @@ function StockManager() {
     }
   };
 
+  // Column sorting for manage tab
+  const toggleManageSort = (field) => {
+    setManageSort(prev => {
+      if (prev.field === field) {
+        if (prev.dir === 'asc') return { field, dir: 'desc' };
+        return { field: null, dir: 'asc' };
+      }
+      return { field, dir: 'asc' };
+    });
+  };
+  const sortIcon = (field) => manageSort.field === field ? (manageSort.dir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+  const getSortedGroupItems = (groupItems) => {
+    if (!manageSort.field) return groupItems;
+    return [...groupItems].sort((a, b) => {
+      let va = a[manageSort.field], vb = b[manageSort.field];
+      if (va == null) va = '';
+      if (vb == null) vb = '';
+      const numA = Number(va), numB = Number(vb);
+      if (!isNaN(numA) && !isNaN(numB) && va !== '' && vb !== '') {
+        return manageSort.dir === 'asc' ? numA - numB : numB - numA;
+      }
+      const cmp = String(va).localeCompare(String(vb));
+      return manageSort.dir === 'asc' ? cmp : -cmp;
+    });
+  };
+
+  // Recipe helpers
+  const saveRecipe = async (recipe) => {
+    try {
+      if (recipe.id) {
+        await axios.put(`${API}/recipes/${recipe.id}`, recipe);
+      } else {
+        await axios.post(`${API}/recipes`, recipe);
+      }
+      const res = await axios.get(`${API}/recipes`);
+      setRecipes(res.data);
+      setRecipeDialogOpen(false);
+    } catch (e) { console.error(e); }
+  };
+  const deleteRecipe = async (id) => {
+    try {
+      await axios.delete(`${API}/recipes/${id}`);
+      setRecipes(prev => prev.filter(r => r.id !== id));
+    } catch (e) { console.error(e); }
+  };
+  const calcRecipeCost = (recipe) => {
+    const ingCost = (recipe.ingredients || []).reduce((sum, ing) => {
+      const item = items.find(i => i.id === ing.item_id);
+      if (!item || !ing.servings_per_unit) return sum;
+      return sum + (item.cost_per_unit * ing.servings_used / ing.servings_per_unit);
+    }, 0);
+    const fixedCost = (recipe.fixed_costs || []).reduce((sum, fc) => sum + (fc.cost || 0), 0);
+    return Math.round((ingCost + fixedCost) * 10) / 10;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
       <div className="container mx-auto px-2 sm:px-4 py-4 max-w-6xl">
