@@ -841,10 +841,12 @@ function StockManager() {
                           <td className="p-1">
                             <input
                               type="text"
-                              value={item.name}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, name: e.target.value} : i))}
-                              onBlur={(e) => saveItem(item.id, { name: e.target.value })}
+                              value={getEditOrVal(item.id, 'name', item.name)}
+                              onFocus={() => startCellEdit(item.id, 'name', item.name)}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'name')}
                               className="w-full h-6 px-1 text-xs border rounded"
+                              data-testid={`edit-name-${item.id}`}
                             />
                           </td>
                           <td className="p-1">
@@ -864,11 +866,13 @@ function StockManager() {
                           <td className="p-1">
                             <input
                               type="text"
-                              value={item.sub_category || ''}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, sub_category: e.target.value} : i))}
-                              onBlur={(e) => saveItem(item.id, { sub_category: e.target.value })}
+                              value={getEditOrVal(item.id, 'sub_category', item.sub_category || '')}
+                              onFocus={() => startCellEdit(item.id, 'sub_category', item.sub_category || '')}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'sub_category')}
                               className="w-full h-6 px-1 text-xs border rounded"
                               placeholder="e.g. Rum"
+                              data-testid={`edit-subcat-${item.id}`}
                             />
                           </td>
                           <td className="p-1">
@@ -886,9 +890,10 @@ function StockManager() {
                             <input
                               type="number"
                               min="1"
-                              value={item.units_per_case}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, units_per_case: parseInt(e.target.value) || 1} : i))}
-                              onBlur={(e) => saveItem(item.id, { units_per_case: parseInt(e.target.value) || 1 })}
+                              value={getEditOrVal(item.id, 'units_per_case', item.units_per_case)}
+                              onFocus={() => startCellEdit(item.id, 'units_per_case', item.units_per_case)}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'units_per_case', v => parseInt(v) || 1)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
                             />
                           </td>
@@ -897,9 +902,10 @@ function StockManager() {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={item.cost_per_unit || ''}
-                              onChange={(e) => setItems(prev => prev.map(i => i.id === item.id ? {...i, cost_per_unit: e.target.value} : i))}
-                              onBlur={(e) => saveItem(item.id, { cost_per_unit: parseFloat(e.target.value) || 0 })}
+                              value={getEditOrVal(item.id, 'cost_per_unit', item.cost_per_unit || '')}
+                              onFocus={() => startCellEdit(item.id, 'cost_per_unit', item.cost_per_unit || '')}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => commitCellEdit(item.id, 'cost_per_unit', v => parseFloat(v) || 0)}
                               className="w-full h-6 px-1 text-xs border rounded text-center"
                             />
                           </td>
