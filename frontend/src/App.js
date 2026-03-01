@@ -957,7 +957,7 @@ function StockManager() {
                           </td>
                         </tr>
                       )}
-                      {group.items.map(item => (
+                      {getSortedGroupItems(group.items).map(item => (
                         <tr key={item.id} className="border-b hover:bg-gray-50" data-testid={`manage-row-${item.id}`}>
                           <td className="p-1">
                             <input
