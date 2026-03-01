@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Body
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -290,7 +290,7 @@ class SortOrderUpdate(BaseModel):
     sort_order: int
 
 @api_router.put("/items/batch-sort-order")
-async def batch_update_sort_order(updates: List[SortOrderUpdate]):
+async def batch_update_sort_order(updates: List[SortOrderUpdate] = Body(...)):
     for update in updates:
         await db.items.update_one(
             {"id": update.id},
