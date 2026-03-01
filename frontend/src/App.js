@@ -1232,6 +1232,9 @@ function StockManager() {
                             </div>
                           </div>
                           <div className="flex gap-1">
+                            <button onClick={() => duplicateRecipe(recipe)} className="p-1.5 hover:bg-blue-100 rounded text-blue-600" title="Duplicate" data-testid={`duplicate-recipe-${recipe.id}`}>
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
                             <button onClick={() => { setEditingRecipe({...recipe}); setRecipeDialogOpen(true); }} className="p-1.5 hover:bg-gray-200 rounded" title="Edit">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
