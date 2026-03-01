@@ -768,9 +768,9 @@ function StockManager() {
               </CardContent>
             </Card>
 
-            <div className="overflow-x-auto bg-white rounded-lg shadow">
+            <div className="overflow-auto max-h-[70vh] bg-white rounded-lg shadow">
               <table className="w-full text-xs sm:text-sm">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr>
                     <th className="text-left p-2 font-semibold">Item</th>
                     <th className="text-center p-2 font-semibold">Have</th>
@@ -907,19 +907,19 @@ function StockManager() {
               </Button>
             </div>
 
-            <div className="overflow-x-auto bg-white rounded-lg shadow">
+            <div className="overflow-auto max-h-[70vh] bg-white rounded-lg shadow">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="text-left p-1.5 font-semibold min-w-[150px]">Name</th>
-                    <th className="text-left p-1.5 font-semibold min-w-[100px]">Category</th>
-                    <th className="text-left p-1.5 font-semibold min-w-[80px]">Sub-Cat</th>
-                    <th className="text-left p-1.5 font-semibold min-w-[80px]">Vendor</th>
-                    <th className="text-center p-1.5 font-semibold w-16">#/Case</th>
-                    <th className="text-center p-1.5 font-semibold w-20">฿/Unit</th>
-                    <th className="text-center p-1.5 font-semibold w-20">฿/Case</th>
-                    <th className="text-center p-1.5 font-semibold w-20">Sale ฿</th>
-                    <th className="text-center p-1.5 font-semibold w-16">Target</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[150px] cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('name')}>Name{sortIcon('name')}</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[100px] cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('category_name')}>Category{sortIcon('category_name')}</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[80px] cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('sub_category')}>Sub-Cat{sortIcon('sub_category')}</th>
+                    <th className="text-left p-1.5 font-semibold min-w-[80px] cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('primary_supplier')}>Vendor{sortIcon('primary_supplier')}</th>
+                    <th className="text-center p-1.5 font-semibold w-16 cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('units_per_case')}>#/Case{sortIcon('units_per_case')}</th>
+                    <th className="text-center p-1.5 font-semibold w-20 cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('cost_per_unit')}>฿/Unit{sortIcon('cost_per_unit')}</th>
+                    <th className="text-center p-1.5 font-semibold w-20 cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('cost_per_case')}>฿/Case{sortIcon('cost_per_case')}</th>
+                    <th className="text-center p-1.5 font-semibold w-20 cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('sale_price')}>Sale ฿{sortIcon('sale_price')}</th>
+                    <th className="text-center p-1.5 font-semibold w-16 cursor-pointer select-none hover:bg-gray-200" onClick={() => toggleManageSort('target_stock')}>Target{sortIcon('target_stock')}</th>
                     <th className="text-center p-1.5 font-semibold w-12">Case?</th>
                     <th className="text-center p-1.5 font-semibold w-16">Actions</th>
                   </tr>
