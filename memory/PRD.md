@@ -43,6 +43,10 @@ Full-stack bar stock management application with mobile-friendly stock counting,
 - Improved sub-category grouping (parent header + indented sub-labels)
 - Unit price auto-calculation now rounds to 1 decimal place
 - Sub-category reordering via up/down arrows in MANAGE tab (persists across all tabs)
+- Sticky floating headers on Inventory and Manage tables
+- Column sorting in Manage tab (click headers to sort asc/desc within groups)
+- Per-item profit chart in Accounting tab (items with sale prices)
+- Menu Item Recipes system: create cocktail/bucket recipes with ingredients from inventory + fixed costs, auto-calculates cost and profit margin
 
 ## Backlog
 - P2: Full Accounting/Reporting (usage & cost analysis between counts)
