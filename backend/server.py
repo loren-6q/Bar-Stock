@@ -284,6 +284,20 @@ async def delete_item(item_id: str):
     
     return {"message": "Item deleted successfully"}
 
+# Batch update sort order
+class SortOrderUpdate(BaseModel):
+    id: str
+    sort_order: int
+
+@api_router.put("/items/batch-sort-order")
+async def batch_update_sort_order(updates: List[SortOrderUpdate]):
+    for update in updates:
+        await db.items.update_one(
+            {"id": update.id},
+            {"$set": {"sort_order": update.sort_order}}
+        )
+    return {"message": f"Updated {len(updates)} items"}
+
 # Stock counting endpoints
 @api_router.post("/stock-counts", response_model=StockCount)
 async def create_stock_count(count: StockCountCreate):
