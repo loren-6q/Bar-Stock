@@ -1135,14 +1135,97 @@ function StockManager() {
 
             <Card>
               <CardHeader className="py-3">
-                <CardTitle className="text-base">Usage Analysis</CardTitle>
-                <p className="text-xs text-gray-500">Coming soon</p>
+                <CardTitle className="text-base">Item Profits</CardTitle>
+                <p className="text-xs text-gray-500">Simple items with a sale price</p>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-gray-400 py-4 text-sm">
-                  Opening Stock + Purchases - Closing Stock = Usage<br/>
-                  Usage × Cost = Expense | Usage × Sale Price = Revenue
-                </p>
+              <CardContent className="p-0">
+                {items.filter(i => i.sale_price > 0).length === 0 ? (
+                  <p className="text-center text-gray-400 py-6 text-sm">Set sale prices in the Manage tab to see profits here.</p>
+                ) : (
+                  <div className="overflow-auto max-h-[40vh]">
+                    <table className="w-full text-xs" data-testid="item-profits-table">
+                      <thead className="bg-gray-100 sticky top-0 z-10">
+                        <tr>
+                          <th className="text-left p-2">Item</th>
+                          <th className="text-center p-2">Cost</th>
+                          <th className="text-center p-2">Sale</th>
+                          <th className="text-center p-2">Profit</th>
+                          <th className="text-center p-2">Margin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.filter(i => i.sale_price > 0).map(item => {
+                          const cost = item.cost_per_unit || 0;
+                          const profit = item.sale_price - cost;
+                          const margin = item.sale_price > 0 ? Math.round(profit / item.sale_price * 100) : 0;
+                          return (
+                            <tr key={item.id} className="border-b hover:bg-gray-50">
+                              <td className="p-2 text-left font-medium">{item.name}</td>
+                              <td className="p-2 text-center">{cost.toFixed(1)}</td>
+                              <td className="p-2 text-center">{item.sale_price.toFixed(1)}</td>
+                              <td className={`p-2 text-center font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {profit.toFixed(1)}
+                              </td>
+                              <td className="p-2 text-center">{margin}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Menu Item Recipes</CardTitle>
+                    <p className="text-xs text-gray-500">Calculate cost & profit for cocktails, buckets, etc.</p>
+                  </div>
+                  <Button size="sm" onClick={() => { setEditingRecipe({ name: '', sale_price: 0, ingredients: [], fixed_costs: [{ name: 'Ice', cost: 2 }] }); setRecipeDialogOpen(true); }} data-testid="add-recipe-btn">
+                    <Plus className="w-4 h-4 mr-1" /> Add Recipe
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {recipes.length === 0 ? (
+                  <p className="text-center text-gray-400 py-6 text-sm">No recipes yet. Add your first menu item!</p>
+                ) : (
+                  <div className="divide-y">
+                    {recipes.map(recipe => {
+                      const cost = calcRecipeCost(recipe);
+                      const profit = recipe.sale_price - cost;
+                      const margin = recipe.sale_price > 0 ? Math.round(profit / recipe.sale_price * 100) : 0;
+                      return (
+                        <div key={recipe.id} className="px-3 py-2.5 flex items-center justify-between hover:bg-gray-50" data-testid={`recipe-${recipe.id}`}>
+                          <div>
+                            <div className="font-medium text-sm">{recipe.name}</div>
+                            <div className="text-xs text-gray-500">
+                              Cost: ฿{cost.toFixed(1)} | Sale: ฿{recipe.sale_price.toFixed(1)} |{' '}
+                              <span className={`font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                Profit: ฿{profit.toFixed(1)} ({margin}%)
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              {recipe.ingredients.map(i => i.item_name).filter(Boolean).join(', ')}
+                              {recipe.fixed_costs.length > 0 && ` + ${recipe.fixed_costs.map(f => f.name).join(', ')}`}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => { setEditingRecipe({...recipe}); setRecipeDialogOpen(true); }} className="p-1.5 hover:bg-gray-200 rounded" title="Edit">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => deleteRecipe(recipe.id)} className="p-1.5 hover:bg-red-100 rounded text-red-600" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
