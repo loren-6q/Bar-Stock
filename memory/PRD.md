@@ -47,6 +47,10 @@ Full-stack bar stock management application with mobile-friendly stock counting,
 - Column sorting in Manage tab (click headers to sort asc/desc within groups)
 - Per-item profit chart in Accounting tab (items with sale prices)
 - Menu Item Recipes system: create cocktail/bucket recipes with ingredients from inventory + fixed costs, auto-calculates cost and profit margin
+- Duplicate recipe button (copy icon creates a clone with "(copy)" suffix)
+- Bidirectional cost calculation: editing unit price auto-calculates case price AND vice versa
+- All costs/prices rounded to 1 decimal place (display, save, and on load from DB)
+- Fixed white space at bottom of Manage tab
 
 ## Backlog
 - P2: Full Accounting/Reporting (usage & cost analysis between counts)
