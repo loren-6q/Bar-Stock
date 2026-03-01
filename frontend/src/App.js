@@ -623,6 +623,15 @@ function StockManager() {
       setRecipes(prev => prev.filter(r => r.id !== id));
     } catch (e) { console.error(e); }
   };
+  const duplicateRecipe = (recipe) => {
+    setEditingRecipe({
+      name: `${recipe.name} (copy)`,
+      sale_price: recipe.sale_price,
+      ingredients: recipe.ingredients.map(i => ({...i})),
+      fixed_costs: recipe.fixed_costs.map(f => ({...f}))
+    });
+    setRecipeDialogOpen(true);
+  };
   const calcRecipeCost = (recipe) => {
     const ingCost = (recipe.ingredients || []).reduce((sum, ing) => {
       const item = items.find(i => i.id === ing.item_id);
