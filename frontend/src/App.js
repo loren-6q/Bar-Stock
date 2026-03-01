@@ -1390,6 +1390,177 @@ function StockManager() {
           </DialogContent>
         </Dialog>
 
+        {/* Recipe Editor Dialog */}
+        <Dialog open={recipeDialogOpen} onOpenChange={setRecipeDialogOpen}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingRecipe?.id ? 'Edit Recipe' : 'New Recipe'}</DialogTitle>
+            </DialogHeader>
+            {editingRecipe && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium block mb-1">Recipe Name</label>
+                    <input
+                      type="text"
+                      value={editingRecipe.name}
+                      onChange={e => setEditingRecipe({...editingRecipe, name: e.target.value})}
+                      className="w-full h-8 px-2 text-sm border rounded"
+                      placeholder="e.g. Basic Bucket"
+                      data-testid="recipe-name-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium block mb-1">Sale Price (฿)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={editingRecipe.sale_price || ''}
+                      onChange={e => setEditingRecipe({...editingRecipe, sale_price: parseFloat(e.target.value) || 0})}
+                      className="w-full h-8 px-2 text-sm border rounded"
+                      data-testid="recipe-price-input"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium">Ingredients</label>
+                    <button
+                      onClick={() => setEditingRecipe({...editingRecipe, ingredients: [...editingRecipe.ingredients, { item_id: '', item_name: '', servings_per_unit: 15, servings_used: 4 }]})}
+                      className="text-xs text-blue-600 hover:underline"
+                      data-testid="add-ingredient-btn"
+                    >+ Add Ingredient</button>
+                  </div>
+                  <div className="space-y-2">
+                    {editingRecipe.ingredients.map((ing, idx) => {
+                      const ingItem = items.find(i => i.id === ing.item_id);
+                      const ingCost = ingItem && ing.servings_per_unit ? Math.round(ingItem.cost_per_unit * ing.servings_used / ing.servings_per_unit * 10) / 10 : 0;
+                      return (
+                        <div key={idx} className="bg-gray-50 rounded p-2 space-y-1.5">
+                          <div className="flex gap-2 items-center">
+                            <select
+                              value={ing.item_id}
+                              onChange={e => {
+                                const sel = items.find(i => i.id === e.target.value);
+                                const updated = [...editingRecipe.ingredients];
+                                updated[idx] = { ...ing, item_id: e.target.value, item_name: sel?.name || '' };
+                                setEditingRecipe({...editingRecipe, ingredients: updated});
+                              }}
+                              className="flex-1 h-7 text-xs border rounded px-1"
+                              data-testid={`ingredient-select-${idx}`}
+                            >
+                              <option value="">Select item...</option>
+                              {items.map(i => <option key={i.id} value={i.id}>{i.name} (฿{i.cost_per_unit})</option>)}
+                            </select>
+                            <button onClick={() => {
+                              const updated = editingRecipe.ingredients.filter((_, i) => i !== idx);
+                              setEditingRecipe({...editingRecipe, ingredients: updated});
+                            }} className="p-1 hover:bg-red-100 rounded text-red-500">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div className="flex gap-2 items-center text-xs">
+                            <span className="text-gray-500 whitespace-nowrap">Servings/unit:</span>
+                            <input
+                              type="number" min="1" step="1"
+                              value={ing.servings_per_unit}
+                              onChange={e => {
+                                const updated = [...editingRecipe.ingredients];
+                                updated[idx] = { ...ing, servings_per_unit: parseFloat(e.target.value) || 1 };
+                                setEditingRecipe({...editingRecipe, ingredients: updated});
+                              }}
+                              className="w-14 h-6 text-center border rounded text-xs"
+                            />
+                            <span className="text-gray-500">Used:</span>
+                            <input
+                              type="number" min="0" step="0.5"
+                              value={ing.servings_used}
+                              onChange={e => {
+                                const updated = [...editingRecipe.ingredients];
+                                updated[idx] = { ...ing, servings_used: parseFloat(e.target.value) || 0 };
+                                setEditingRecipe({...editingRecipe, ingredients: updated});
+                              }}
+                              className="w-14 h-6 text-center border rounded text-xs"
+                            />
+                            <span className="text-gray-500 ml-auto font-medium">= ฿{ingCost.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium">Fixed Costs</label>
+                    <button
+                      onClick={() => setEditingRecipe({...editingRecipe, fixed_costs: [...editingRecipe.fixed_costs, { name: '', cost: 0 }]})}
+                      className="text-xs text-blue-600 hover:underline"
+                      data-testid="add-fixed-cost-btn"
+                    >+ Add Cost</button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {editingRecipe.fixed_costs.map((fc, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text" value={fc.name} placeholder="e.g. Ice"
+                          onChange={e => {
+                            const updated = [...editingRecipe.fixed_costs];
+                            updated[idx] = { ...fc, name: e.target.value };
+                            setEditingRecipe({...editingRecipe, fixed_costs: updated});
+                          }}
+                          className="flex-1 h-7 text-xs border rounded px-2"
+                        />
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-400 mr-1">฿</span>
+                          <input
+                            type="number" step="0.5" value={fc.cost || ''}
+                            onChange={e => {
+                              const updated = [...editingRecipe.fixed_costs];
+                              updated[idx] = { ...fc, cost: parseFloat(e.target.value) || 0 };
+                              setEditingRecipe({...editingRecipe, fixed_costs: updated});
+                            }}
+                            className="w-16 h-7 text-xs border rounded px-2 text-center"
+                          />
+                        </div>
+                        <button onClick={() => {
+                          const updated = editingRecipe.fixed_costs.filter((_, i) => i !== idx);
+                          setEditingRecipe({...editingRecipe, fixed_costs: updated});
+                        }} className="p-1 hover:bg-red-100 rounded text-red-500">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded p-3 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Total Cost:</span>
+                    <span className="font-bold">฿{calcRecipeCost(editingRecipe).toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Sale Price:</span>
+                    <span>฿{(editingRecipe.sale_price || 0).toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold border-t border-blue-200 pt-1">
+                    <span>Profit:</span>
+                    <span className={(editingRecipe.sale_price || 0) - calcRecipeCost(editingRecipe) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      ฿{((editingRecipe.sale_price || 0) - calcRecipeCost(editingRecipe)).toFixed(1)}
+                      {editingRecipe.sale_price > 0 && ` (${Math.round(((editingRecipe.sale_price || 0) - calcRecipeCost(editingRecipe)) / editingRecipe.sale_price * 100)}%)`}
+                    </span>
+                  </div>
+                </div>
+
+                <Button onClick={() => saveRecipe(editingRecipe)} className="w-full" data-testid="save-recipe-btn">
+                  <Save className="w-4 h-4 mr-2" /> Save Recipe
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Toaster />
       </div>
     </div>
