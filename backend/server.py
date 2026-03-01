@@ -65,6 +65,8 @@ class RecipeCreate(BaseModel):
     sale_price: float = 0.0
     ingredients: List[RecipeIngredient] = []
     fixed_costs: List[RecipeFixedCost] = []
+
+class ItemCreate(BaseModel):
     name: str
     category: str
     category_name: str
