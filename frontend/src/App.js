@@ -531,6 +531,36 @@ function StockManager() {
     showCatHeader: idx === 0 || manageGroups[key].category !== manageGroups[manageSortedKeys[idx - 1]].category
   }));
 
+  // Move a sub-category up or down within its category
+  const moveSubCategory = async (category, subCategory, direction) => {
+    const catKeys = sortedKeys.filter(k => groups[k].category === category);
+    const idx = catKeys.findIndex(k => groups[k].subCategory === subCategory);
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= catKeys.length) return;
+    if (direction === 'up' && !groups[catKeys[targetIdx]].subCategory) return;
+
+    const reordered = [...catKeys];
+    [reordered[idx], reordered[targetIdx]] = [reordered[targetIdx], reordered[idx]];
+
+    const batchUpdates = [];
+    reordered.forEach((k, i) => {
+      groups[k].items.forEach(item => {
+        batchUpdates.push({ id: item.id, sort_order: i * 100 });
+      });
+    });
+
+    setItems(prev => prev.map(item => {
+      const u = batchUpdates.find(b => b.id === item.id);
+      return u ? { ...item, sort_order: u.sort_order } : item;
+    }));
+
+    try {
+      await axios.put(`${API}/items/batch-sort-order`, batchUpdates);
+    } catch (error) {
+      console.error('Error updating sort order:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
       <div className="container mx-auto px-2 sm:px-4 py-4 max-w-6xl">
