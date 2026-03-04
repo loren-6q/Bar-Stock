@@ -706,10 +706,11 @@ async def delete_purchase_entry(purchase_id: str):
 
 # Bulk order confirmation endpoint
 @api_router.post("/orders")
-async def save_confirmed_order(order: dict):
+async def save_confirmed_order(request: Request):
     """Save a confirmed purchase order with actual quantities and costs"""
-    order['_id'] = None  # MongoDB will generate
-    await db.confirmed_orders.insert_one(order)
+    order = await request.json()
+    order.pop('_id', None)
+    result = await db.confirmed_orders.insert_one(order)
     return {"message": "Order saved successfully", "order_id": order.get('id')}
 
 @api_router.get("/orders")
